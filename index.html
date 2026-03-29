@@ -306,6 +306,11 @@
         <button type="submit">Kart Ekle</button>
       </form>
       <p class="tiny">Eklenen hedefler localStorage'da saklanir.</p>
+      <div class="form tight-top">
+        <button id="exportTargetsBtn" type="button">Targets Disa Aktar</button>
+        <button id="importTargetsBtn" type="button">Targets Ice Aktar</button>
+        <input id="importTargetsFile" type="file" accept="application/json" title="Targets JSON dosyasi sec" class="sr-only" />
+      </div>
 
       <h2 class="with-top-gap">Alarm Ayari</h2>
       <div class="form tight-top">
@@ -360,6 +365,9 @@
     const editMethodEl = document.getElementById('editMethod');
     const editIntervalEl = document.getElementById('editInterval');
     const editCancelBtn = document.getElementById('editCancelBtn');
+    const exportTargetsBtn = document.getElementById('exportTargetsBtn');
+    const importTargetsBtn = document.getElementById('importTargetsBtn');
+    const importTargetsFile = document.getElementById('importTargetsFile');
 
     const storeKey = 'apiflow-monitor-targets';
     const alertThresholdKey = 'apiflow-monitor-alert-threshold';
@@ -494,6 +502,60 @@
         clearInterval(timerId);
         intervalMap.delete(id);
       }
+    }
+
+    function restartAllTargets() {
+      for (const id of intervalMap.keys()) {
+        stopTarget(id);
+      }
+      for (const target of targets) {
+        startTarget(target);
+      }
+      render();
+    }
+
+    function exportTargets() {
+      const payload = {
+        version: 1,
+        exportedAt: new Date().toISOString(),
+        targets
+      };
+      const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      const stamp = new Date().toISOString().replace(/[.:]/g, '-');
+      a.href = url;
+      a.download = `apiflow-targets-${stamp}.json`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(url);
+      log('Targets disa aktarildi');
+    }
+
+    function isValidImportedTarget(candidate) {
+      if (!candidate || typeof candidate !== 'object') return false;
+      const name = String(candidate.name || '').trim();
+      const url = String(candidate.url || '').trim();
+      const method = String(candidate.method || 'GET').toUpperCase();
+      const intervalMs = Number(candidate.intervalMs || 10000);
+      return Boolean(name) && Boolean(url) && ['GET', 'POST', 'HEAD'].includes(method) && Number.isFinite(intervalMs);
+    }
+
+    function applyImportedTargets(rawItems) {
+      const normalized = rawItems
+        .filter(isValidImportedTarget)
+        .map((x) => normalizeTarget(x));
+
+      const merged = new Map();
+      for (const t of [...targets, ...normalized]) {
+        merged.set(`${t.method}|${t.url}`, normalizeTarget(t));
+      }
+
+      targets = [...merged.values()];
+      saveLocalTargets(targets);
+      restartAllTargets();
+      log(`Import tamamlandi. Toplam kart: ${targets.length}`);
     }
 
     function render() {
@@ -771,6 +833,34 @@
       updateBanner();
       render();
       log('Alarm durumu sifirlandi');
+    });
+
+    exportTargetsBtn.addEventListener('click', () => {
+      exportTargets();
+    });
+
+    importTargetsBtn.addEventListener('click', () => {
+      importTargetsFile.click();
+    });
+
+    importTargetsFile.addEventListener('change', async (e) => {
+      const file = e.target.files && e.target.files[0];
+      if (!file) return;
+
+      try {
+        const text = await file.text();
+        const parsed = JSON.parse(text);
+        const items = Array.isArray(parsed) ? parsed : (Array.isArray(parsed.targets) ? parsed.targets : []);
+        if (!Array.isArray(items) || items.length === 0) {
+          log('Import dosyasi gecerli target listesi icermiyor');
+          return;
+        }
+        applyImportedTargets(items);
+      } catch (err) {
+        log(`Import hatasi: ${esc(String(err.message || err))}`);
+      } finally {
+        importTargetsFile.value = '';
+      }
     });
 
     async function init() {

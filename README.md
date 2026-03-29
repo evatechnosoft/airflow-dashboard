@@ -11,7 +11,8 @@ npm start
 ```
 
 Dashboard:
-- http://127.0.0.1:8095
+
+- <http://127.0.0.1:8095>
 
 ## Ozellikler
 
@@ -25,6 +26,7 @@ Dashboard:
 - Arama + durum filtresi (all/up/down)
 - Uygulama ici hata banner'i (esik degeri ve mute)
 - Probe dayanikliligi: retry, signal (UP/WARN/DOWN/TIMEOUT), attempts
+- Targets import/export (JSON)
 
 ## Not
 
