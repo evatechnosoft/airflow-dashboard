@@ -1,0 +1,13 @@
+{
+  "name": "apiflow-monitor-mvp",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Quick MVP dashboard to monitor any API as cards and logs",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "express": "^4.21.1"
+  }
+}

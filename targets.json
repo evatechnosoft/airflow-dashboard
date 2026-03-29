@@ -1,0 +1,20 @@
+[
+  {
+    "name": "Social Frontend Health",
+    "url": "http://127.0.0.1:8083/health",
+    "method": "GET",
+    "intervalMs": 10000
+  },
+  {
+    "name": "Node Drizzle Backend Health",
+    "url": "http://127.0.0.1:8084/health",
+    "method": "GET",
+    "intervalMs": 10000
+  },
+  {
+    "name": ".NET Hello World",
+    "url": "http://127.0.0.1:8081",
+    "method": "GET",
+    "intervalMs": 15000
+  }
+]
