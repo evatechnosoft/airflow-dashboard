@@ -58,17 +58,13 @@ jobs:
   deploy:
     needs: select-target
     runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        target: [dev-server, test-server, prod-server, azure-webapp]
-    if: needs.select-target.outputs.deploy_target == matrix.target
     steps:
       - name: Checkout
         uses: actions/checkout@v4
 
       # Dev Server Deploy
       - name: Upload to Dev Server
-        if: matrix.target == 'dev-server'
+        if: needs.select-target.outputs.deploy_target == 'dev-server'
         uses: appleboy/scp-action@v0.1.7
         with:
           host: ${{ secrets.DEV_SERVER_HOST }}
@@ -80,7 +76,7 @@ jobs:
           rm: false
 
       - name: Restart Dev Server (PM2)
-        if: matrix.target == 'dev-server'
+        if: needs.select-target.outputs.deploy_target == 'dev-server'
         uses: appleboy/ssh-action@v1.0.3
         with:
           host: ${{ secrets.DEV_SERVER_HOST }}
@@ -101,7 +97,7 @@ jobs:
 
       # Test Server Deploy
       - name: Upload to Test Server
-        if: matrix.target == 'test-server'
+        if: needs.select-target.outputs.deploy_target == 'test-server'
         uses: appleboy/scp-action@v0.1.7
         with:
           host: ${{ secrets.TEST_SERVER_HOST }}
@@ -113,7 +109,7 @@ jobs:
           rm: false
 
       - name: Restart Test Server (PM2)
-        if: matrix.target == 'test-server'
+        if: needs.select-target.outputs.deploy_target == 'test-server'
         uses: appleboy/ssh-action@v1.0.3
         with:
           host: ${{ secrets.TEST_SERVER_HOST }}
@@ -134,7 +130,7 @@ jobs:
 
       # Prod Server Deploy
       - name: Upload to Prod Server
-        if: matrix.target == 'prod-server'
+        if: needs.select-target.outputs.deploy_target == 'prod-server'
         uses: appleboy/scp-action@v0.1.7
         with:
           host: ${{ secrets.PROD_SERVER_HOST }}
@@ -146,7 +142,7 @@ jobs:
           rm: false
 
       - name: Restart Prod Server (PM2)
-        if: matrix.target == 'prod-server'
+        if: needs.select-target.outputs.deploy_target == 'prod-server'
         uses: appleboy/ssh-action@v1.0.3
         with:
           host: ${{ secrets.PROD_SERVER_HOST }}
@@ -167,24 +163,24 @@ jobs:
 
       # Azure Web App Deploy
       - name: Setup Node
-        if: matrix.target == 'azure-webapp'
+        if: needs.select-target.outputs.deploy_target == 'azure-webapp'
         uses: actions/setup-node@v4
         with:
           node-version: 20
           cache: npm
 
       - name: Install deps
-        if: matrix.target == 'azure-webapp'
+        if: needs.select-target.outputs.deploy_target == 'azure-webapp'
         run: npm ci --omit=dev
 
       - name: Azure login
-        if: matrix.target == 'azure-webapp'
+        if: needs.select-target.outputs.deploy_target == 'azure-webapp'
         uses: azure/login@v2
         with:
           creds: ${{ secrets.AZURE_CREDENTIALS }}
 
       - name: Deploy web app
-        if: matrix.target == 'azure-webapp'
+        if: needs.select-target.outputs.deploy_target == 'azure-webapp'
         uses: azure/webapps-deploy@v3
         with:
           app-name: ${{ secrets.AZURE_WEBAPP_NAME }}
