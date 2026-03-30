@@ -1,0 +1,208 @@
+name: One-Click Deploy
+
+description: |
+  Tek butonla branch'e göre otomatik hedefe deploy ve smoke test. 
+  - dev branch: dev server (SSH)
+  - test branch: test server (SSH)
+  - prod branch: prod server (SSH) (isteğe bağlı Azure Web App/Container)
+  - main/master branch: prod server (SSH)
+  Manuel override ile hedef seçilebilir.
+
+on:
+  workflow_dispatch:
+    inputs:
+      target:
+        description: "Deploy target (auto=branch'e göre)"
+        required: false
+        default: "auto"
+        type: choice
+        options:
+          - auto
+          - test-server
+          - prod-server
+          - azure-webapp
+
+jobs:
+  select-target:
+    runs-on: ubuntu-latest
+    outputs:
+      deploy_target: ${{ steps.set-target.outputs.deploy_target }}
+    steps:
+      - name: Set deploy target
+        id: set-target
+        run: |
+          branch="${{ github.ref_name }}"
+          input_target="${{ github.event.inputs.target || 'auto' }}"
+          if [ "$input_target" != "auto" ]; then
+            echo "deploy_target=$input_target" >> $GITHUB_OUTPUT
+          else
+            case "$branch" in
+              dev)
+                echo "deploy_target=dev-server" >> $GITHUB_OUTPUT
+                ;;
+              test)
+                echo "deploy_target=test-server" >> $GITHUB_OUTPUT
+                ;;
+              prod)
+                echo "deploy_target=prod-server" >> $GITHUB_OUTPUT
+                ;;
+              main|master)
+                echo "deploy_target=prod-server" >> $GITHUB_OUTPUT
+                ;;
+              *)
+                echo "deploy_target=dev-server" >> $GITHUB_OUTPUT
+                ;;
+            esac
+          fi
+
+  deploy:
+    needs: select-target
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        target: [dev-server, test-server, prod-server, azure-webapp]
+    if: needs.select-target.outputs.deploy_target == matrix.target
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      # Dev Server Deploy
+      - name: Upload to Dev Server
+        if: matrix.target == 'dev-server'
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ secrets.DEV_SERVER_HOST }}
+          username: ${{ secrets.DEV_SERVER_USER }}
+          key: ${{ secrets.DEV_SERVER_SSH_KEY }}
+          port: ${{ secrets.DEV_SERVER_PORT || 22 }}
+          source: "."
+          target: ${{ secrets.DEV_SERVER_APP_PATH }}
+          rm: false
+
+      - name: Restart Dev Server (PM2)
+        if: matrix.target == 'dev-server'
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.DEV_SERVER_HOST }}
+          username: ${{ secrets.DEV_SERVER_USER }}
+          key: ${{ secrets.DEV_SERVER_SSH_KEY }}
+          port: ${{ secrets.DEV_SERVER_PORT || 22 }}
+          script: |
+            set -e
+            cd "${{ secrets.DEV_SERVER_APP_PATH }}"
+            npm ci --omit=dev
+            if pm2 describe apiflow-monitor > /dev/null 2>&1; then
+              pm2 restart apiflow-monitor --update-env
+            else
+              pm2 start npm --name apiflow-monitor -- start
+            fi
+            pm2 save
+            pm2 status
+
+      # Test Server Deploy
+      - name: Upload to Test Server
+        if: matrix.target == 'test-server'
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ secrets.TEST_SERVER_HOST }}
+          username: ${{ secrets.TEST_SERVER_USER }}
+          key: ${{ secrets.TEST_SERVER_SSH_KEY }}
+          port: ${{ secrets.TEST_SERVER_PORT || 22 }}
+          source: "."
+          target: ${{ secrets.TEST_SERVER_APP_PATH }}
+          rm: false
+
+      - name: Restart Test Server (PM2)
+        if: matrix.target == 'test-server'
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.TEST_SERVER_HOST }}
+          username: ${{ secrets.TEST_SERVER_USER }}
+          key: ${{ secrets.TEST_SERVER_SSH_KEY }}
+          port: ${{ secrets.TEST_SERVER_PORT || 22 }}
+          script: |
+            set -e
+            cd "${{ secrets.TEST_SERVER_APP_PATH }}"
+            npm ci --omit=dev
+            if pm2 describe apiflow-monitor > /dev/null 2>&1; then
+              pm2 restart apiflow-monitor --update-env
+            else
+              pm2 start npm --name apiflow-monitor -- start
+            fi
+            pm2 save
+            pm2 status
+
+      # Prod Server Deploy
+      - name: Upload to Prod Server
+        if: matrix.target == 'prod-server'
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ secrets.PROD_SERVER_HOST }}
+          username: ${{ secrets.PROD_SERVER_USER }}
+          key: ${{ secrets.PROD_SERVER_SSH_KEY }}
+          port: ${{ secrets.PROD_SERVER_PORT || 22 }}
+          source: "."
+          target: ${{ secrets.PROD_SERVER_APP_PATH }}
+          rm: false
+
+      - name: Restart Prod Server (PM2)
+        if: matrix.target == 'prod-server'
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.PROD_SERVER_HOST }}
+          username: ${{ secrets.PROD_SERVER_USER }}
+          key: ${{ secrets.PROD_SERVER_SSH_KEY }}
+          port: ${{ secrets.PROD_SERVER_PORT || 22 }}
+          script: |
+            set -e
+            cd "${{ secrets.PROD_SERVER_APP_PATH }}"
+            npm ci --omit=dev
+            if pm2 describe apiflow-monitor > /dev/null 2>&1; then
+              pm2 restart apiflow-monitor --update-env
+            else
+              pm2 start npm --name apiflow-monitor -- start
+            fi
+            pm2 save
+            pm2 status
+
+      # Azure Web App Deploy
+      - name: Setup Node
+        if: matrix.target == 'azure-webapp'
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install deps
+        if: matrix.target == 'azure-webapp'
+        run: npm ci --omit=dev
+
+      - name: Azure login
+        if: matrix.target == 'azure-webapp'
+        uses: azure/login@v2
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
+
+      - name: Deploy web app
+        if: matrix.target == 'azure-webapp'
+        uses: azure/webapps-deploy@v3
+        with:
+          app-name: ${{ secrets.AZURE_WEBAPP_NAME }}
+          package: .
+
+  smoke:
+    needs: deploy
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Run smoke test
+        run: |
+          curl -fsS ${{ secrets.SMOKE_URL || 'http://127.0.0.1:9201/healthz' }}
+
+  rollback:
+    if: failure() && needs.deploy.result == 'failure'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Rollback (manual placeholder)
+        run: echo "Rollback işlemi manuel olarak uygulanmalı."
