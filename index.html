@@ -764,7 +764,11 @@
     function detectEnv() {
       if (window.__ENV) return String(window.__ENV).toLowerCase();
       const host = location.hostname;
+      const port = String(location.port || '');
       if (host.includes('localhost') || host.startsWith('127.')) return 'dev';
+      // Same host can serve multiple environments; disambiguate by mapped port.
+      if (port === '9308') return 'test';
+      if (port === '9309') return 'prod';
       if (host.includes('test')) return 'test';
       if (host.includes('prod') || host.includes('evaitec.com')) return 'prod';
       return 'dev';
