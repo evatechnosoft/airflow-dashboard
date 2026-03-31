@@ -10,7 +10,17 @@
     "db:push": "drizzle-kit push",
     "db:generate:pg": "drizzle-kit generate --config drizzle.config.pg.js",
     "db:push:pg": "drizzle-kit push --config drizzle.config.pg.js",
-    "dev": "nodemon server.js"
+    "dev": "nodemon server.js",
+    "help-me": "pwsh -NoProfile -File scripts/help-router.ps1 /help-me",
+    "help-git": "pwsh -NoProfile -File scripts/help-router.ps1 /help-git",
+    "help-hooks": "pwsh -NoProfile -File scripts/help-router.ps1 /help-hooks",
+    "help-agent": "pwsh -NoProfile -File scripts/help-router.ps1 /help-agent",
+    "help-deploy": "pwsh -NoProfile -File scripts/help-router.ps1 /help-deploy",
+    "help-ops": "pwsh -NoProfile -File scripts/help-router.ps1 /help-ops",
+    "ops:backup": "pwsh -NoProfile -File scripts/backup-checkpoint.ps1",
+    "ops:restore-test": "python scripts/restore-checkpoint-test.py",
+    "ops:health-report": "pwsh -NoProfile -File scripts/health-report.ps1",
+    "hooks:setup": "pwsh -NoProfile -File scripts/setup-hooks.ps1"
   },
   "dependencies": {
     "better-sqlite3": "^12.8.0",
@@ -23,3 +33,4 @@
     "nodemon": "^3.1.14"
   }
 }
+
