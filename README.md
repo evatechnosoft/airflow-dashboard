@@ -241,3 +241,4 @@ Sistem artik calisma verisini dosyaya JSONL formatinda yazar:
 
 Bu akista hem test/QA izi tutulur hem de ileride analytics pipeline icin ham veri korunur.
 test: auto deploy workflow test
+test: workflow trigger
