@@ -1,0 +1,31 @@
+{
+  "riskRules": {
+    "high": [
+      "rm -rf",
+      "reset --hard",
+      "drop database",
+      "truncate",
+      "delete all",
+      "force push"
+    ],
+    "medium": [
+      "deploy",
+      "production",
+      "restart",
+      "migration",
+      "rename",
+      "delete"
+    ]
+  },
+  "approvalPolicy": {
+    "low": "auto-apply",
+    "medium": "confirm-if-destructive",
+    "high": "explicit-confirm-required"
+  },
+  "subagentRules": {
+    "separatorHints": [",", " and ", " ve ", ";"],
+    "minIndependentTasks": 2,
+    "complexityKeywords": ["parallel", "multi", "comprehensive", "large", "buyuyen", "kapsamli"],
+    "minComplexityMatches": 1
+  }
+}

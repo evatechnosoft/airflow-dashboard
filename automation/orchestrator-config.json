@@ -1,0 +1,13 @@
+{
+  "name": "task-orchestrator",
+  "version": "1.0.0",
+  "description": "Automatic skill and subagent planner for incoming tasks",
+  "outputs": {
+    "format": "json",
+    "includeWhy": true
+  },
+  "fallback": {
+    "skills": ["solid", "verification-before-completion"],
+    "agent": "Explore"
+  }
+}

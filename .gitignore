@@ -2,3 +2,20 @@ node_modules/
 *.log
 .DS_Store
 Thumbs.db
+
+# Secrets and private keys
+*.pem
+*.key
+*id_ed25519*
+.env
+.env.*
+
+# Known sensitive/artifact files in this repo
+.github/workflows/mykey.txt
+apiflow-monitor.tar
+
+# Runtime artifacts
+output/shared/apiflow.db
+output/shared/checkpoints/
+output/results/*.jsonl
+

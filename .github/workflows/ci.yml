@@ -1,0 +1,54 @@
+name: CI Local Smoke
+
+on:
+  push:
+    branches: ["main"]
+  pull_request:
+
+jobs:
+  smoke:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install deps
+        run: npm ci
+
+      - name: Start app
+        shell: bash
+        run: |
+          nohup npm start > app.log 2>&1 &
+          echo $! > app.pid
+
+      - name: Wait for app
+        shell: bash
+        run: |
+          for i in {1..25}; do
+            if curl -fsS http://127.0.0.1:9201/healthz > /dev/null; then
+              exit 0
+            fi
+            sleep 2
+          done
+          echo "App did not become healthy" >&2
+          cat app.log || true
+          exit 1
+
+      - name: Smoke endpoints
+        run: |
+          curl -fsS http://127.0.0.1:9201/healthz
+          curl -fsS http://127.0.0.1:9201/api/targets
+
+      - name: Stop app
+        if: always()
+        shell: bash
+        run: |
+          if [ -f app.pid ]; then
+            kill "$(cat app.pid)" || true
+          fi

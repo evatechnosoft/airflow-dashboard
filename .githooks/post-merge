@@ -1,0 +1,3 @@
+#!/usr/bin/env sh
+set -e
+pwsh -NoProfile -File scripts/hooks/post-merge-note.ps1

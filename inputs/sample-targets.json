@@ -1,0 +1,66 @@
+{
+  "version": 1,
+  "exportedAt": "2026-03-30T00:00:00.000Z",
+  "targets": [
+    {
+      "name": "Core HTTPBin GET",
+      "url": "https://httpbin.org/get",
+      "method": "GET",
+      "intervalMs": 10000
+    },
+    {
+      "name": "Core Postman Echo",
+      "url": "https://postman-echo.com/get?source=apiflow",
+      "method": "GET",
+      "intervalMs": 10000
+    },
+    {
+      "name": "Core JSON Todo",
+      "url": "https://jsonplaceholder.typicode.com/todos/1",
+      "method": "GET",
+      "intervalMs": 12000
+    },
+    {
+      "name": "Core JSON User",
+      "url": "https://jsonplaceholder.typicode.com/users/1",
+      "method": "GET",
+      "intervalMs": 12000
+    },
+    {
+      "name": "Core Dummy Product",
+      "url": "https://dummyjson.com/products/1",
+      "method": "GET",
+      "intervalMs": 15000
+    },
+    {
+      "name": "Core Dummy User",
+      "url": "https://dummyjson.com/users/1",
+      "method": "GET",
+      "intervalMs": 15000
+    },
+    {
+      "name": "Core GitHub Root",
+      "url": "https://api.github.com",
+      "method": "GET",
+      "intervalMs": 20000
+    },
+    {
+      "name": "Core Cat Fact",
+      "url": "https://catfact.ninja/fact",
+      "method": "GET",
+      "intervalMs": 20000
+    },
+    {
+      "name": "Core Joke API",
+      "url": "https://official-joke-api.appspot.com/random_joke",
+      "method": "GET",
+      "intervalMs": 22000
+    },
+    {
+      "name": "Core Agify",
+      "url": "https://api.agify.io/?name=eva",
+      "method": "GET",
+      "intervalMs": 22000
+    }
+  ]
+}

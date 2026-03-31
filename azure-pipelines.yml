@@ -1,0 +1,47 @@
+trigger:
+- main
+
+pr:
+- main
+
+pool:
+  vmImage: ubuntu-latest
+
+variables:
+  nodeVersion: '20.x'
+
+stages:
+- stage: Validate
+  displayName: Validate and Smoke
+  jobs:
+  - job: Smoke
+    steps:
+    - checkout: self
+    - task: NodeTool@0
+      inputs:
+        versionSpec: $(nodeVersion)
+      displayName: Use Node.js
+    - script: npm ci
+      displayName: Install dependencies
+    - script: |
+        nohup npm start > app.log 2>&1 &
+        for i in {1..25}; do
+          curl -fsS http://127.0.0.1:9201/healthz && break
+          sleep 2
+        done
+      displayName: Start and health check
+    - script: |
+        curl -fsS http://127.0.0.1:9201/api/targets
+      displayName: API smoke check
+
+- stage: Deploy
+  displayName: Deploy (Template)
+  dependsOn: Validate
+  condition: succeeded()
+  jobs:
+  - job: DeployPlaceholder
+    steps:
+    - script: |
+        echo "Buraya hedef ortama gore deploy komutu ekleyin"
+        echo "Ornek: SSH + PM2, Container Registry + Web App, AKS, vb."
+      displayName: Deploy placeholder

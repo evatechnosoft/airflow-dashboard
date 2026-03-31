@@ -1,0 +1,69 @@
+{
+  "project": {
+    "name": "apiflow-monitor-mvp",
+    "description": "API monitoring dashboard — ops automation config",
+    "repoRoot": "."
+  },
+  "backup": {
+    "enabled": true,
+    "rootPath": "output/shared/checkpoints",
+    "includePaths": [
+      ".claude",
+      ".copilot",
+      "targets.json",
+      ".gitignore"
+    ],
+    "maxCheckpoints": 7,
+    "compressionLevel": "Optimal",
+    "schedule": {
+      "enabled": true,
+      "frequency": "daily",
+      "time": "02:00",
+      "timezone": "Europe/Istanbul"
+    }
+  },
+  "restore": {
+    "validateManifest": true,
+    "keepExtractedOnFailure": false,
+    "mandatoryFiles": ["manifest.json"],
+    "optionalFiles": ["settings.json", "targets.json", ".gitignore"]
+  },
+  "health": {
+    "enabled": true,
+    "endpointTimeoutSeconds": 8,
+    "backupFreshnessHours": 24,
+    "endpoints": [
+      {
+        "name": "dev-local",
+        "url": "http://127.0.0.1:9201/healthz",
+        "optional": false
+      },
+      {
+        "name": "test-env",
+        "url": "http://192.168.1.186:9308/healthz",
+        "optional": true
+      },
+      {
+        "name": "prod-env",
+        "url": "http://192.168.1.186:9309/healthz",
+        "optional": false
+      }
+    ],
+    "schedule": {
+      "enabled": true,
+      "frequency": "every-4-hours",
+      "startTime": "06:00"
+    }
+  },
+  "reporting": {
+    "healthReportPath": "output/results/ops-health-latest.json",
+    "logPath": "output/logs/ops.log",
+    "verbosity": "normal"
+  },
+  "notifications": {
+    "enabled": false,
+    "onBackupFailure": false,
+    "onRestoreFailed": false,
+    "onHealthWarn": false
+  }
+}

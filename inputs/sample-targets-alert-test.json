@@ -1,0 +1,30 @@
+{
+  "version": 1,
+  "exportedAt": "2026-03-30T00:00:00.000Z",
+  "targets": [
+    {
+      "name": "Alert Test 200",
+      "url": "https://httpstat.us/200",
+      "method": "GET",
+      "intervalMs": 10000
+    },
+    {
+      "name": "Alert Test 429",
+      "url": "https://httpstat.us/429",
+      "method": "GET",
+      "intervalMs": 10000
+    },
+    {
+      "name": "Alert Test 503",
+      "url": "https://httpstat.us/503",
+      "method": "GET",
+      "intervalMs": 10000
+    },
+    {
+      "name": "Alert Test Timeout",
+      "url": "https://httpstat.us/200?sleep=10000",
+      "method": "GET",
+      "intervalMs": 12000
+    }
+  ]
+}

@@ -1,0 +1,3 @@
+#!/usr/bin/env sh
+set -e
+pwsh -NoProfile -File scripts/hooks/pre-commit-secret-scan.ps1

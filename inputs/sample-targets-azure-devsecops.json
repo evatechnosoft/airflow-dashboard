@@ -1,0 +1,42 @@
+{
+  "version": 1,
+  "name": "azure-devsecops-pack",
+  "generatedAt": "2026-03-30T00:00:00Z",
+  "targets": [
+    {
+      "name": "Azure Public Endpoints",
+      "url": "https://management.azure.com:443/metadata/endpoints?api-version=2020-01-01",
+      "method": "GET",
+      "intervalMs": 10000,
+      "category": "azure"
+    },
+    {
+      "name": "Azure DevOps Status",
+      "url": "https://status.dev.azure.com:443/",
+      "method": "GET",
+      "intervalMs": 10000,
+      "category": "devops"
+    },
+    {
+      "name": "DevSecOps Task Board",
+      "url": "http://127.0.0.1:5500/outputs/shared/azure-task-board-live.html",
+      "method": "GET",
+      "intervalMs": 10000,
+      "category": "devops"
+    },
+    {
+      "name": "DevSecOps Task State",
+      "url": "http://127.0.0.1:5500/outputs/shared/task-state.js",
+      "method": "GET",
+      "intervalMs": 10000,
+      "category": "pipeline"
+    },
+    {
+      "name": "Azure Container Terraform Pipeline",
+      "url": "http://127.0.0.1:5500/inputs/azure-devops-pipelines/azure-pipelines.container-terraform.yml",
+      "method": "GET",
+      "intervalMs": 15000,
+      "category": "pipeline"
+    }
+  ]
+}

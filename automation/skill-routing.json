@@ -1,0 +1,52 @@
+{
+  "defaultSkills": [
+    "solid",
+    "verification-before-completion"
+  ],
+  "routes": [
+    {
+      "domain": "deploy",
+      "keywords": ["deploy", "release", "prod", "production", "docker", "compose", "publish", "server", "cikar"],
+      "skills": ["azure-deploy", "verification-before-completion"]
+    },
+    {
+      "domain": "debug",
+      "keywords": ["bug", "error", "hata", "fix", "debug", "sorun", "stack trace", "exception"],
+      "skills": ["systematic-debugging", "verification-before-completion"]
+    },
+    {
+      "domain": "review",
+      "keywords": ["review", "incele", "kod inceleme", "audit", "denetim"],
+      "skills": ["requesting-code-review", "bmad-code-review"]
+    },
+    {
+      "domain": "testing",
+      "keywords": ["test", "coverage", "qa", "widget test", "integration test"],
+      "skills": ["test-driven-development", "verification-before-completion"]
+    },
+    {
+      "domain": "azure",
+      "keywords": ["azure", "foundry", "aks", "app service", "cosmos", "function app"],
+      "skills": ["azure-master-coach", "azure-prepare", "azure-validate"]
+    },
+    {
+      "domain": "agent",
+      "keywords": ["agent", "skill", "subagent", "orchestrator", "workflow"],
+      "skills": ["agent-customization", "using-superpowers", "subagent-driven-development"]
+    }
+  ],
+  "agentSelection": [
+    {
+      "whenKeywords": ["data", "csv", "jsonl", "trend", "analiz"],
+      "agentName": "DataAnalysisExpert"
+    },
+    {
+      "whenKeywords": ["agent", "workflow", "evaluation", "foundry"],
+      "agentName": "AIAgentExpert"
+    },
+    {
+      "whenKeywords": ["search", "ara", "bul", "codebase", "dosya"],
+      "agentName": "Explore"
+    }
+  ]
+}
