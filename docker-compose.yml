@@ -18,7 +18,7 @@ services:
     environment:
       TARGET_REPOSITORY: drizzle-pg
       DATABASE_URL: postgresql://postgres:postgres@db:5432/apiflow_monitor
-      PROBE_MODE: mock
+      PROBE_MODE: live
       HOST: 0.0.0.0
       PORT: 9201
       PUBLIC_HOST: 192.168.1.186
