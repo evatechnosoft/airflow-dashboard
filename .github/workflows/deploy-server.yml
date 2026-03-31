@@ -1,0 +1,52 @@
+name: Deploy To Server (SSH)
+
+on:
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: "Target environment name"
+        required: true
+        default: "prod"
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    env:
+      SERVER_HOST: ${{ secrets.SERVER_HOST }}
+      SERVER_USER: ${{ secrets.SERVER_USER }}
+      SERVER_SSH_KEY: ${{ secrets.SERVER_SSH_KEY }}
+      SERVER_PORT: ${{ secrets.SERVER_PORT }}
+      SERVER_APP_PATH: ${{ secrets.SERVER_APP_PATH }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Upload project files
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ env.SERVER_HOST }}
+          username: ${{ env.SERVER_USER }}
+          key: ${{ env.SERVER_SSH_KEY }}
+          port: ${{ env.SERVER_PORT != '' && env.SERVER_PORT || '22' }}
+          source: "."
+          target: ${{ env.SERVER_APP_PATH }}
+          rm: false
+
+      - name: Restart app with PM2
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ env.SERVER_HOST }}
+          username: ${{ env.SERVER_USER }}
+          key: ${{ env.SERVER_SSH_KEY }}
+          port: ${{ env.SERVER_PORT != '' && env.SERVER_PORT || '22' }}
+          script: |
+            set -e
+            cd "${{ env.SERVER_APP_PATH }}"
+            npm ci --omit=dev
+            if pm2 describe apiflow-monitor > /dev/null 2>&1; then
+              pm2 restart apiflow-monitor --update-env
+            else
+              pm2 start npm --name apiflow-monitor -- start
+            fi
+            pm2 save
+            pm2 status

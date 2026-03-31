@@ -17,9 +17,13 @@
     "help-agent": "pwsh -NoProfile -File scripts/help-router.ps1 /help-agent",
     "help-deploy": "pwsh -NoProfile -File scripts/help-router.ps1 /help-deploy",
     "help-ops": "pwsh -NoProfile -File scripts/help-router.ps1 /help-ops",
+    "health:all": "pwsh -NoProfile -File scripts/health-check-all.ps1",
     "ops:backup": "pwsh -NoProfile -File scripts/backup-checkpoint.ps1",
     "ops:restore-test": "python scripts/restore-checkpoint-test.py",
     "ops:health-report": "pwsh -NoProfile -File scripts/health-report.ps1",
+    "ops:setup-register": "pwsh -NoProfile -File scripts/ops-setup.ps1 -RegisterTasks",
+    "ops:setup-unregister": "pwsh -NoProfile -File scripts/ops-setup.ps1 -UnregisterTasks",
+    "ops:setup-list": "pwsh -NoProfile -File scripts/ops-setup.ps1 -ListTasks",
     "hooks:setup": "pwsh -NoProfile -File scripts/setup-hooks.ps1"
   },
   "dependencies": {
@@ -33,4 +37,5 @@
     "nodemon": "^3.1.14"
   }
 }
+
 
