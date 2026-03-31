@@ -162,8 +162,8 @@ Bugun tamamlananlar:
 - `docs/help/help-ops.md` ve `handoff.md` markdown lint duzeltmeleri commit+push edildi.
 - `pages.yml` schema hatasi duzeltildi ve push edildi.
 - Multi-root workspace dosyasi eklendi: `apiflow-monitor-plus-ops.code-workspace`
-   - `c:/projects/apiflow-monitor-mvp`
-   - `c:/projects/ops-automation-system`
+- Workspace yolu 1: `c:/projects/apiflow-monitor-mvp`
+- Workspace yolu 2: `c:/projects/ops-automation-system`
 - Tek komut saglik kontrolu eklendi: `npm run health:all`
 - Merge hazirlik checklist dosyasi eklendi: `docs/checklists/test-to-main-checklist.md`
 
