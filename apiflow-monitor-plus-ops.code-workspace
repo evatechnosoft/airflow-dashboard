@@ -1,0 +1,16 @@
+{
+  "folders": [
+    {
+      "path": "c:/projects/apiflow-monitor-mvp"
+    },
+    {
+      "path": "c:/projects/ops-automation-system"
+    }
+  ],
+  "settings": {
+    "files.exclude": {
+      "**/node_modules": true,
+      "**/.git": true
+    }
+  }
+}
