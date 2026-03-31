@@ -6,24 +6,27 @@
   <title>APIFlow Monitor MVP</title>
   <style>
     :root {
-      --bg: #f4f7fb;
-      --ink: #111827;
-      --muted: #6b7280;
-      --panel: #ffffff;
-      --line: #e5e7eb;
-      --ok: #16a34a;
-      --bad: #dc2626;
-      --warn: #d97706;
-      --accent: #0ea5e9;
+      --bg: #091426;
+      --ink: #e5f2ff;
+      --muted: #9fb6cf;
+      --panel: rgba(20, 42, 70, 0.52);
+      --line: rgba(180, 220, 255, 0.22);
+      --ok: #39d98a;
+      --bad: #ff5c77;
+      --warn: #ffb454;
+      --accent: #59b7ff;
+      --gain: #50f5cf;
+      --consumption: #ff7a59;
     }
     * { box-sizing: border-box; }
     body {
       margin: 0;
-      font-family: "Segoe UI", Tahoma, sans-serif;
+      font-family: "Sora", "Poppins", "Segoe UI", Tahoma, sans-serif;
       color: var(--ink);
       background:
-        radial-gradient(circle at 8% 10%, #dbeafe 0%, transparent 34%),
-        radial-gradient(circle at 88% 18%, #cffafe 0%, transparent 38%),
+        radial-gradient(circle at 12% 8%, rgba(60, 180, 255, 0.4) 0%, transparent 34%),
+        radial-gradient(circle at 82% 16%, rgba(80, 245, 207, 0.28) 0%, transparent 40%),
+        radial-gradient(circle at 50% 100%, rgba(15, 35, 66, 0.86) 0%, transparent 56%),
         var(--bg);
     }
     .wrap {
@@ -35,13 +38,13 @@
       gap: 16px;
     }
     .panel {
-      background: rgba(255,255,255,0.86);
-      -webkit-backdrop-filter: blur(4px);
-      backdrop-filter: blur(4px);
+      background: var(--panel);
+      -webkit-backdrop-filter: blur(14px) saturate(135%);
+      backdrop-filter: blur(14px) saturate(135%);
       border: 1px solid var(--line);
       border-radius: 14px;
       padding: 14px;
-      box-shadow: 0 12px 28px rgba(10, 30, 60, 0.08);
+      box-shadow: 0 18px 40px rgba(0, 0, 0, 0.26);
     }
     h1 { margin: 0; font-size: 22px; }
     h2 { margin: 0; font-size: 16px; color: var(--muted); }
@@ -59,11 +62,24 @@
     }
     .card {
       border: 1px solid var(--line);
-      border-radius: 12px;
-      padding: 12px;
-      background: #fff;
+      border-radius: 16px;
+      padding: 14px;
+      background:
+        linear-gradient(145deg, rgba(150, 218, 255, 0.22), rgba(10, 24, 46, 0.2)),
+        rgba(18, 40, 68, 0.45);
       position: relative;
       overflow: hidden;
+      box-shadow:
+        inset 0 1px 0 rgba(255, 255, 255, 0.32),
+        0 12px 28px rgba(6, 10, 20, 0.4);
+      transform-style: preserve-3d;
+      transition: transform 220ms ease, box-shadow 220ms ease;
+    }
+    .card:hover {
+      transform: translateY(-3px) perspective(900px) rotateX(3deg);
+      box-shadow:
+        inset 0 1px 0 rgba(255, 255, 255, 0.44),
+        0 20px 38px rgba(2, 8, 20, 0.54);
     }
     .card::before {
       content: "";
@@ -71,23 +87,207 @@
       top: 0;
       left: 0;
       right: 0;
-      height: 3px;
-      background: var(--accent);
-      opacity: 0.9;
+      height: 4px;
+      background: linear-gradient(90deg, rgba(89, 183, 255, 0.6), rgba(80, 245, 207, 0.92));
+      opacity: 1;
+    }
+    .card::after {
+      content: "";
+      position: absolute;
+      width: 160px;
+      height: 160px;
+      border-radius: 999px;
+      top: -80px;
+      right: -60px;
+      background: radial-gradient(circle, rgba(255, 255, 255, 0.22), transparent 68%);
+      pointer-events: none;
     }
     .row { display: flex; justify-content: space-between; gap: 8px; align-items: center; }
-    .name { font-size: 14px; font-weight: 700; }
+    .name {
+      font-size: 14px;
+      font-weight: 700;
+      letter-spacing: 0.2px;
+      min-width: 0;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      padding-right: 4px;
+    }
     .url { font-size: 11px; color: var(--muted); margin: 6px 0 10px; word-break: break-all; }
     .badge {
       border-radius: 999px;
-      padding: 2px 9px;
+      padding: 3px 10px;
       font-size: 11px;
       color: white;
       font-weight: 700;
+      border: 1px solid rgba(255, 255, 255, 0.24);
+      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.25);
+      white-space: nowrap;
+      flex-shrink: 0;
     }
-    .ok { background: var(--ok); }
-    .bad { background: var(--bad); }
-    .warn { background: var(--warn); }
+    .ok { background: linear-gradient(130deg, #27c77a, #13a45f); }
+    .bad { background: linear-gradient(130deg, #ff6a88, #e54568); }
+    .warn { background: linear-gradient(130deg, #ffc16f, #ef9541); }
+    .visual-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+      margin-top: 10px;
+    }
+    .viz-box {
+      border: 1px solid rgba(177, 226, 255, 0.2);
+      border-radius: 10px;
+      background: rgba(4, 16, 34, 0.35);
+      padding: 8px;
+    }
+    .metric-line {
+      display: flex;
+      justify-content: space-between;
+      font-size: 11px;
+      color: #c8dcf2;
+      margin-bottom: 6px;
+    }
+    .service-chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      border: 1px solid rgba(180, 220, 255, 0.25);
+      border-radius: 999px;
+      padding: 2px 8px;
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: 0.2px;
+      margin-bottom: 8px;
+      color: #dbeafe;
+      background: rgba(7, 18, 36, 0.58);
+    }
+    .service-chip.core { border-color: rgba(96, 165, 250, 0.45); color: #bfdbfe; }
+    .service-chip.observability { border-color: rgba(16, 185, 129, 0.45); color: #a7f3d0; }
+    .service-chip.automation { border-color: rgba(251, 191, 36, 0.45); color: #fde68a; }
+    .service-chip.azure { border-color: rgba(59, 130, 246, 0.52); color: #bfdbfe; }
+    .service-chip.devops { border-color: rgba(45, 212, 191, 0.52); color: #99f6e4; }
+    .service-chip.pipeline { border-color: rgba(251, 146, 60, 0.52); color: #fed7aa; }
+    .service-chip.custom { border-color: rgba(196, 181, 253, 0.45); color: #ddd6fe; }
+    .metric-line strong {
+      color: #eff7ff;
+      font-weight: 700;
+    }
+    .spark-bars {
+      display: grid;
+      grid-template-columns: repeat(12, minmax(0, 1fr));
+      gap: 3px;
+      height: 56px;
+      align-items: end;
+    }
+    .spark-bar {
+      border-radius: 6px 6px 4px 4px;
+      background: linear-gradient(180deg, rgba(80, 245, 207, 0.95), rgba(37, 155, 255, 0.52));
+      min-height: 8px;
+      opacity: 0.95;
+      transition: height 200ms ease;
+    }
+    .spark-bar.danger {
+      background: linear-gradient(180deg, rgba(255, 190, 120, 0.95), rgba(255, 92, 119, 0.7));
+    }
+    .curve-wrap {
+      height: 56px;
+      border-radius: 8px;
+      overflow: hidden;
+      background: linear-gradient(180deg, rgba(17, 34, 61, 0.95), rgba(7, 16, 30, 0.9));
+      border: 1px solid rgba(177, 226, 255, 0.14);
+      padding: 4px;
+    }
+    .curve-svg {
+      width: 100%;
+      height: 100%;
+      display: block;
+    }
+    .curve-area {
+      fill: rgba(89, 183, 255, 0.2);
+    }
+    .curve-path {
+      fill: none;
+      stroke: var(--curve-stroke, #59b7ff);
+      stroke-width: 2.2;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+      filter: drop-shadow(0 0 6px rgba(89, 183, 255, 0.35));
+    }
+    .wave-wrap {
+      height: 56px;
+      border-radius: 8px;
+      overflow: hidden;
+      position: relative;
+      background: linear-gradient(180deg, rgba(17, 34, 61, 0.95), rgba(7, 16, 30, 0.9));
+    }
+    .wave {
+      position: absolute;
+      bottom: calc(var(--level, 44%) - 28px);
+      left: -30%;
+      width: 160%;
+      height: 44px;
+      border-radius: 42%;
+      background: linear-gradient(90deg, rgba(80, 245, 207, 0.42), rgba(89, 183, 255, 0.38));
+      animation: drift 5.5s linear infinite;
+    }
+    .wave.two {
+      animation-duration: 8s;
+      opacity: 0.55;
+      bottom: calc(var(--level, 44%) - 24px);
+    }
+    .cluster {
+      height: 58px;
+      position: relative;
+      --cluster-spread: 12px;
+      --cluster-tone: rgba(80, 245, 207, 0.92);
+    }
+    .cluster span {
+      position: absolute;
+      width: 11px;
+      height: 11px;
+      border-radius: 999px;
+      background: var(--cluster-tone);
+      box-shadow: 0 0 10px rgba(80, 245, 207, 0.45);
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+    }
+    .cluster span:nth-child(1) { transform: translate(calc(-50% - var(--cluster-spread)), calc(-50% - var(--cluster-spread))); }
+    .cluster span:nth-child(2) { transform: translate(calc(-50% + var(--cluster-spread)), calc(-50% - var(--cluster-spread))); }
+    .cluster span:nth-child(3) { transform: translate(calc(-50% - calc(var(--cluster-spread) * 1.35)), calc(-50% + 3px)); }
+    .cluster span:nth-child(4) { transform: translate(calc(-50% + calc(var(--cluster-spread) * 1.35)), calc(-50% + 3px)); }
+    .cluster span:nth-child(5) { transform: translate(calc(-50% - 2px), calc(-50% + calc(var(--cluster-spread) * 1.35))); }
+    .cluster span:nth-child(6) { transform: translate(calc(-50% - calc(var(--cluster-spread) * 0.4)), calc(-50% - calc(var(--cluster-spread) * 0.1))); }
+    .cluster span:nth-child(7) { transform: translate(calc(-50% + calc(var(--cluster-spread) * 0.55)), calc(-50% + calc(var(--cluster-spread) * 0.3))); }
+    .cluster-caption {
+      font-size: 11px;
+      color: #b7cee6;
+      margin-top: 6px;
+      text-align: center;
+    }
+    .mode-chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      border-radius: 999px;
+      font-size: 11px;
+      padding: 3px 10px;
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      background: rgba(12, 29, 52, 0.64);
+      color: #d8e9fa;
+      margin-top: 8px;
+    }
+    .mode-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 999px;
+      background: var(--mode-color, var(--gain));
+      box-shadow: 0 0 10px var(--mode-color, var(--gain));
+    }
+    @keyframes drift {
+      from { transform: translateX(0); }
+      to { transform: translateX(18%); }
+    }
     pre {
       margin: 8px 0 0;
       background: #f8fafc;
@@ -106,9 +306,9 @@
       overflow: auto;
       font-size: 12px;
       line-height: 1.45;
-      border: 1px solid var(--line);
+      border: 1px solid rgba(180, 220, 255, 0.2);
       border-radius: 10px;
-      background: #0b1220;
+      background: rgba(7, 16, 30, 0.82);
       color: #d1d5db;
       padding: 10px;
     }
@@ -120,14 +320,15 @@
       margin-top: 8px;
     }
     input, select, button {
-      border: 1px solid var(--line);
+      border: 1px solid rgba(180, 220, 255, 0.24);
       border-radius: 8px;
       padding: 8px;
       font-size: 13px;
       font-family: inherit;
+      background: rgba(255, 255, 255, 0.9);
     }
     button {
-      background: #111827;
+      background: #0d223f;
       color: white;
       cursor: pointer;
     }
@@ -137,51 +338,137 @@
       gap: 8px;
       margin: 8px 0 12px;
     }
+    .stack-builder {
+      border: 1px solid rgba(180, 220, 255, 0.2);
+      border-radius: 10px;
+      background: rgba(9, 21, 40, 0.62);
+      padding: 9px;
+      display: grid;
+      gap: 7px;
+      margin-bottom: 12px;
+    }
+    .stack-title {
+      font-size: 12px;
+      font-weight: 700;
+      color: #dbeafe;
+      letter-spacing: 0.2px;
+    }
+    .stack-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 6px;
+    }
+    .profile-grid {
+      display: grid;
+      gap: 6px;
+      margin-bottom: 12px;
+    }
+    .quick-grid {
+      display: grid;
+      gap: 6px;
+      margin-bottom: 12px;
+    }
+    .dryrun-panel {
+      border: 1px solid rgba(180, 220, 255, 0.2);
+      border-radius: 10px;
+      background: rgba(9, 21, 40, 0.62);
+      padding: 8px;
+      display: grid;
+      gap: 6px;
+      margin-bottom: 12px;
+    }
+    .dryrun-summary {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 6px;
+    }
+    .dryrun-pill {
+      border: 1px solid rgba(180, 220, 255, 0.22);
+      border-radius: 999px;
+      padding: 4px 8px;
+      text-align: center;
+      font-size: 11px;
+      font-weight: 700;
+      background: rgba(255, 255, 255, 0.92);
+      color: #0f172a;
+    }
+    .dryrun-list {
+      font-size: 11px;
+      color: #dbeafe;
+      line-height: 1.4;
+    }
+    .health-panel {
+      border: 1px solid rgba(180, 220, 255, 0.2);
+      border-radius: 10px;
+      background: rgba(9, 21, 40, 0.62);
+      padding: 8px;
+      display: grid;
+      gap: 5px;
+      margin-bottom: 12px;
+    }
+    .health-chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      border-radius: 999px;
+      padding: 3px 8px;
+      font-size: 11px;
+      font-weight: 700;
+      width: fit-content;
+      background: rgba(255, 255, 255, 0.92);
+      color: #0f172a;
+      border: 1px solid rgba(180, 220, 255, 0.24);
+    }
+    .health-chip.ok { border-color: rgba(16, 185, 129, 0.5); color: #065f46; }
+    .health-chip.error { border-color: rgba(239, 68, 68, 0.5); color: #7f1d1d; }
+    .health-chip.idle { border-color: rgba(148, 163, 184, 0.45); color: #334155; }
     .filter-row {
       display: flex;
       gap: 6px;
     }
     .filter-btn {
       flex: 1;
-      background: #ffffff;
-      color: #111827;
-      border: 1px solid var(--line);
+      background: rgba(255, 255, 255, 0.9);
+      color: #10243f;
+      border: 1px solid rgba(180, 220, 255, 0.36);
       font-size: 12px;
       padding: 7px 8px;
     }
     .filter-btn.active {
-      background: #0f172a;
+      background: #0f2f54;
       color: #ffffff;
     }
     .filter-count {
       font-size: 11px;
-      color: var(--muted);
+      color: #c8dbef;
     }
     .alert-banner {
       display: none;
       align-items: center;
       justify-content: space-between;
       gap: 8px;
-      border: 1px solid #f59e0b;
+      border: 1px solid rgba(255, 190, 111, 0.8);
       border-left: 4px solid #f59e0b;
-      background: #fffbeb;
+      background: rgba(51, 35, 15, 0.78);
       border-radius: 10px;
       padding: 8px 10px;
       margin-bottom: 10px;
       font-size: 12px;
+      color: #ffd79d;
     }
     .alert-banner.high {
-      border-color: #dc2626;
-      background: #fef2f2;
+      border-color: #ff5f7d;
+      background: rgba(77, 16, 30, 0.8);
+      color: #ffd4de;
     }
     .mini-actions {
       display: flex;
       gap: 6px;
     }
     .mini-btn {
-      border: 1px solid var(--line);
+      border: 1px solid rgba(180, 220, 255, 0.24);
       border-radius: 6px;
-      background: #ffffff;
+      background: rgba(255, 255, 255, 0.92);
       color: #111827;
       font-size: 11px;
       padding: 4px 7px;
@@ -189,21 +476,84 @@
     }
     .card-actions {
       position: absolute;
-      top: 8px;
+      bottom: 10px;
       right: 8px;
-      display: flex;
-      gap: 4px;
+      display: grid;
+      justify-items: end;
+      gap: 6px;
+      z-index: 2;
     }
-    .card-act {
-      width: 26px;
-      height: 26px;
-      border: 1px solid var(--line);
-      border-radius: 6px;
-      background: #ffffff;
+    .gear-btn {
+      width: 30px;
+      height: 30px;
+      border: 1px solid rgba(180, 220, 255, 0.24);
+      border-radius: 999px;
+      background: rgba(10, 24, 46, 0.92);
+      color: #dbeafe;
       cursor: pointer;
-      font-size: 12px;
+      font-size: 14px;
       line-height: 1;
       padding: 0;
+      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.2);
+    }
+    .card-menu {
+      min-width: 148px;
+      border: 1px solid rgba(180, 220, 255, 0.3);
+      border-radius: 10px;
+      background: rgba(8, 20, 40, 0.96);
+      box-shadow: 0 14px 30px rgba(2, 8, 20, 0.48);
+      padding: 5px;
+      display: none;
+      transform-origin: bottom right;
+    }
+    .card-actions.open .card-menu {
+      display: grid;
+      gap: 4px;
+      animation: menuIn 130ms ease-out;
+    }
+    .card-menu-item {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      border: 1px solid rgba(180, 220, 255, 0.22);
+      border-radius: 8px;
+      background: rgba(255, 255, 255, 0.92);
+      color: #0f172a;
+      font-size: 12px;
+      font-weight: 600;
+      padding: 6px 9px;
+      cursor: pointer;
+      text-align: left;
+    }
+    .card-menu-item .i {
+      width: 14px;
+      text-align: center;
+      opacity: 0.9;
+      font-size: 12px;
+      line-height: 1;
+      flex-shrink: 0;
+    }
+    .card-menu-item.danger {
+      border-color: rgba(248, 113, 113, 0.45);
+      background: rgba(255, 228, 230, 0.95);
+      color: #7f1d1d;
+    }
+    .card-menu-item:hover {
+      background: #ffffff;
+    }
+    .card > .row:first-child {
+      padding-right: 8px;
+      min-height: 28px;
+    }
+    @keyframes menuIn {
+      from {
+        opacity: 0;
+        transform: scale(0.96) translateY(2px);
+      }
+      to {
+        opacity: 1;
+        transform: scale(1) translateY(0);
+      }
     }
     .modal-backdrop {
       position: fixed;
@@ -220,11 +570,11 @@
     }
     .modal-card {
       width: min(460px, 100%);
-      background: #ffffff;
-      border: 1px solid var(--line);
+      background: rgba(12, 24, 46, 0.95);
+      border: 1px solid rgba(180, 220, 255, 0.3);
       border-radius: 12px;
       padding: 12px;
-      box-shadow: 0 18px 45px rgba(2, 6, 23, 0.25);
+      box-shadow: 0 18px 45px rgba(2, 6, 23, 0.35);
     }
     .muted-chip {
       display: inline-block;
@@ -257,6 +607,7 @@
     }
     @media (max-width: 960px) {
       .wrap { grid-template-columns: 1fr; }
+      .visual-grid { grid-template-columns: 1fr; }
     }
   </style>
 </head>
@@ -271,11 +622,14 @@
         </div>
       </div>
       <div class="top">
-        <div>
-          <h1>APIFlow Monitor</h1>
-          <h2>Baglanan API endpointlerini kart kart izle</h2>
-        </div>
-        <div class="tiny" id="summary">Yukleniyor...</div>
+          <div>
+            <h1>APIFlow Monitor</h1>
+            <h2>Baglanan API endpointlerini kart kart izle</h2>
+          </div>
+          <div style="display: flex; flex-direction: column; align-items: flex-end; gap: 4px; min-width: 64px;">
+            <span id="envBadge" class="badge" style="min-width:48px;text-align:center;"></span>
+            <div class="tiny" id="summary">Yukleniyor...</div>
+          </div>
       </div>
       <div id="cards" class="grid"></div>
     </section>
@@ -289,7 +643,67 @@
           <button id="filterUp" class="filter-btn" type="button" data-filter="up">Up</button>
           <button id="filterDown" class="filter-btn" type="button" data-filter="down">Down</button>
         </div>
+        <select id="shapeMode" title="Kart gorsel sekli">
+          <option value="all">Sekil: Hepsi</option>
+          <option value="bars">Sekil: Bar</option>
+          <option value="curve">Sekil: Egrisi</option>
+          <option value="wave">Sekil: Dalga</option>
+          <option value="cluster">Sekil: Kume</option>
+        </select>
         <div id="filterCount" class="filter-count">Gosterilen: 0 / 0</div>
+      </div>
+
+      <h2>Stack Kurucu</h2>
+      <div class="profile-grid">
+        <select id="subscriptionSelect" title="Subscription profili sec"></select>
+        <div class="stack-row">
+          <input id="newSubscriptionName" placeholder="Yeni subscription/profil adi" />
+          <button id="addSubscriptionBtn" type="button">Profil Ekle</button>
+        </div>
+      </div>
+      <div class="stack-builder">
+        <div class="stack-title">Homelab + Azure DevSecOps Paketi</div>
+        <select id="stackPreset" title="Hazir stack sec">
+          <option value="core">Core: Docker + Portainer + Home Assistant + Node-RED</option>
+          <option value="observability">Observability: Dozzle + Uptime Kuma + Grafana + Prometheus</option>
+          <option value="automation">Automation: n8n + MQTT + MinIO + Code Server</option>
+          <option value="azuredevsecops">Azure DevSecOps: Services + Repos + Pipelines</option>
+          <option value="allinone">All-in-One Hub: Core + Observability + Automation</option>
+        </select>
+        <div class="stack-row">
+          <input id="stackHost" placeholder="Host/IP (or: 192.168.1.187)" />
+          <input id="stackInterval" type="number" min="3000" step="1000" value="10000" title="Kontrol araligi" />
+        </div>
+        <button id="addStackBtn" type="button">Secili Paketi Ekle</button>
+        <div class="tiny">Referans duzen: homelab dashboard + Azure DevSecOps. (D:/Azure/devsecops dosyalari icin 5500 gibi bir static server ile yayinlayin.)</div>
+      </div>
+
+      <h2>Hizli Otomasyon</h2>
+      <div class="quick-grid">
+        <div class="stack-row">
+          <button id="quickAllinoneBtn" type="button">Aktif Profile All-in-One</button>
+          <button id="quickAzureBtn" type="button">Aktif Profile Azure DevSecOps</button>
+        </div>
+        <div class="stack-row">
+          <button id="exportActiveBtn" type="button">Aktif Profili Disa Aktar</button>
+          <label class="tiny" for="autoSyncOnProfile"><input id="autoSyncOnProfile" type="checkbox" /> Profile Switch Auto Sync</label>
+        </div>
+        <div class="stack-row">
+          <button id="dryRunSyncBtn" type="button">Dry Run Sync</button>
+          <button id="applyDryRunBtn" type="button">Dry Run'i Uygula</button>
+        </div>
+        <button id="commitReadyExportBtn" type="button">Commit-Ready Export</button>
+        <input id="connectorUrl" placeholder="Connector URL (json veya {targets:[...]})" />
+      </div>
+      <div class="health-panel">
+        <div class="stack-title">Connector Source Health</div>
+        <div id="connectorHealthStatus" class="health-chip idle">IDLE</div>
+        <div id="connectorHealthMeta" class="tiny">Son sync henuz yok.</div>
+      </div>
+      <div id="dryRunPanel" class="dryrun-panel">
+        <div class="stack-title">Dry Run Fark Ozeti</div>
+        <div id="dryRunSummary" class="dryrun-summary"></div>
+        <div id="dryRunPreview" class="dryrun-list">Dry Run henuz calistirilmadi.</div>
       </div>
 
       <h2>Yeni API Ekle</h2>
@@ -345,13 +759,64 @@
   </div>
 
   <script>
+    // Ortam badge'i için ortamı belirle
+    // window.__ENV globali varsa onu kullan, yoksa hostname veya default 'dev'
+    function detectEnv() {
+      if (window.__ENV) return String(window.__ENV).toLowerCase();
+      const host = location.hostname;
+      if (host.includes('localhost') || host.startsWith('127.')) return 'dev';
+      if (host.includes('test')) return 'test';
+      if (host.includes('prod') || host.includes('evaitec.com')) return 'prod';
+      return 'dev';
+    }
+
+    function renderEnvBadge() {
+      const env = detectEnv();
+      const badge = document.getElementById('envBadge');
+      if (!badge) return;
+      let color = '#fff', bg = 'linear-gradient(130deg, #eab308, #ca8a04)', label = 'DEV';
+      if (env === 'prod') { bg = 'linear-gradient(130deg, #22c55e, #16a34a)'; label = 'PROD'; }
+      else if (env === 'test') { bg = 'linear-gradient(130deg, #ef4444, #dc2626)'; label = 'TEST'; }
+      const hostname = location.hostname || 'localhost';
+      badge.textContent = `${label} · ${hostname}`;
+      badge.style.background = bg;
+      badge.style.color = color;
+      badge.style.display = 'inline-block';
+      badge.style.fontWeight = 'bold';
+      badge.style.letterSpacing = '0.5px';
+      badge.style.fontSize = '12px';
+      badge.style.padding = '4px 12px';
+      badge.title = `Environment: ${label} on ${hostname}`;
+    }
+    window.addEventListener('DOMContentLoaded', renderEnvBadge);
     const cardsEl = document.getElementById('cards');
     const logsEl = document.getElementById('logs');
     const summaryEl = document.getElementById('summary');
     const addForm = document.getElementById('addForm');
     const searchBoxEl = document.getElementById('searchBox');
+    const shapeModeEl = document.getElementById('shapeMode');
     const filterCountEl = document.getElementById('filterCount');
     const filterButtons = Array.from(document.querySelectorAll('.filter-btn'));
+    const stackPresetEl = document.getElementById('stackPreset');
+    const stackHostEl = document.getElementById('stackHost');
+    const stackIntervalEl = document.getElementById('stackInterval');
+    const addStackBtn = document.getElementById('addStackBtn');
+    const quickAllinoneBtn = document.getElementById('quickAllinoneBtn');
+    const quickAzureBtn = document.getElementById('quickAzureBtn');
+    const exportActiveBtn = document.getElementById('exportActiveBtn');
+    const autoSyncOnProfileEl = document.getElementById('autoSyncOnProfile');
+    const dryRunSyncBtn = document.getElementById('dryRunSyncBtn');
+    const applyDryRunBtn = document.getElementById('applyDryRunBtn');
+    const commitReadyExportBtn = document.getElementById('commitReadyExportBtn');
+    const connectorUrlEl = document.getElementById('connectorUrl');
+    const connectorHealthStatusEl = document.getElementById('connectorHealthStatus');
+    const connectorHealthMetaEl = document.getElementById('connectorHealthMeta');
+    const dryRunPanelEl = document.getElementById('dryRunPanel');
+    const dryRunSummaryEl = document.getElementById('dryRunSummary');
+    const dryRunPreviewEl = document.getElementById('dryRunPreview');
+    const subscriptionSelectEl = document.getElementById('subscriptionSelect');
+    const newSubscriptionNameEl = document.getElementById('newSubscriptionName');
+    const addSubscriptionBtn = document.getElementById('addSubscriptionBtn');
     const errorBannerEl = document.getElementById('errorBanner');
     const bannerTextEl = document.getElementById('bannerText');
     const bannerMuteBtn = document.getElementById('bannerMuteBtn');
@@ -370,15 +835,65 @@
     const importTargetsFile = document.getElementById('importTargetsFile');
 
     const storeKey = 'apiflow-monitor-targets';
+    const shapeModeKey = 'apiflow-monitor-shape-mode';
     const alertThresholdKey = 'apiflow-monitor-alert-threshold';
     const alertMutedKey = 'apiflow-monitor-alert-muted';
+    const subscriptionProfilesKey = 'apiflow-monitor-subscription-profiles';
+    const activeSubscriptionKey = 'apiflow-monitor-active-subscription';
+    const connectorUrlKey = 'apiflow-monitor-connector-url';
+    const autoSyncOnProfileKey = 'apiflow-monitor-auto-sync-on-profile';
+    const profileConnectorMapKey = 'apiflow-monitor-profile-connector-map';
+    const connectorHealthKey = 'apiflow-monitor-connector-health';
+    const defaultStackHost = (location.hostname && location.hostname !== '') ? location.hostname : '127.0.0.1';
+    const STACK_PRESETS = {
+      core: [
+        { name: 'Docker Engine Ping', port: 2375, path: '/_ping', category: 'core' },
+        { name: 'Portainer API Status', port: 9000, path: '/api/status', category: 'core' },
+        { name: 'Home Assistant', port: 8123, path: '/', category: 'core' },
+        { name: 'Node-RED', port: 1880, path: '/', category: 'core' }
+      ],
+      observability: [
+        { name: 'Dozzle', port: 8080, path: '/', category: 'observability' },
+        { name: 'Uptime Kuma', port: 3001, path: '/', category: 'observability' },
+        { name: 'Grafana', port: 3000, path: '/api/health', category: 'observability' },
+        { name: 'Prometheus', port: 9090, path: '/-/healthy', category: 'observability' }
+      ],
+      automation: [
+        { name: 'n8n', port: 5678, path: '/healthz', category: 'automation' },
+        { name: 'MQTT Broker', port: 1883, path: '/', category: 'automation' },
+        { name: 'MinIO', port: 9001, path: '/minio/health/live', category: 'automation' },
+        { name: 'Code Server', port: 8443, path: '/healthz', category: 'automation' }
+      ],
+      azuredevsecops: [
+        { name: 'Azure Public Endpoints', port: 443, path: '/metadata/endpoints?api-version=2020-01-01', category: 'azure', protocol: 'https', hostOverride: 'management.azure.com' },
+        { name: 'Azure DevOps Status', port: 443, path: '/', category: 'devops', protocol: 'https', hostOverride: 'status.dev.azure.com' },
+        { name: 'DevSecOps Task Board', port: 5500, path: '/outputs/shared/azure-task-board-live.html', category: 'devops' },
+        { name: 'DevSecOps Task State', port: 5500, path: '/outputs/shared/task-state.js', category: 'pipeline' },
+        { name: 'Pipeline Template Source', port: 5500, path: '/inputs/azure-devops-pipelines/azure-pipelines.container-terraform.yml', category: 'pipeline' }
+      ]
+    };
     let targets = [];
     let state = new Map();
     let intervalMap = new Map();
     let searchQuery = '';
     let statusFilter = 'all';
+    let shapeMode = 'all';
+    let subscriptionProfiles = [];
+    let activeSubscription = 'Local';
+    let autoSyncOnProfile = false;
+    let profileConnectorMap = {};
+    let connectorHealth = {
+      status: 'idle',
+      lastSyncAt: '',
+      lastUrl: '',
+      lastMode: '',
+      error: ''
+    };
+    let lastDryRunPlan = null;
     let editingId = null;
+    let openMenuId = null;
     let errorCounts = new Map();
+    let trendMap = new Map();
     let bannerDismissed = false;
     let alertConfig = {
       threshold: 3,
@@ -429,7 +944,514 @@
         url: String(input.url || '').trim(),
         method: String(input.method || 'GET').toUpperCase(),
         intervalMs: Math.max(3000, Number(input.intervalMs || 10000)),
-        paused: Boolean(input.paused)
+        paused: Boolean(input.paused),
+        category: String(input.category || 'custom').toLowerCase(),
+        subscription: String(input.subscription || activeSubscription || 'Local').trim() || 'Local'
+      };
+    }
+
+    function loadSubscriptionProfiles() {
+      try {
+        const raw = localStorage.getItem(subscriptionProfilesKey);
+        const parsed = raw ? JSON.parse(raw) : ['Local', 'Azure subscription 1', 'DevSecOps-Lab'];
+        const normalized = Array.isArray(parsed)
+          ? parsed.map((x) => String(x || '').trim()).filter(Boolean)
+          : ['Local', 'Azure subscription 1', 'DevSecOps-Lab'];
+        subscriptionProfiles = [...new Set(['Local', ...normalized])];
+      } catch {
+        subscriptionProfiles = ['Local', 'Azure subscription 1', 'DevSecOps-Lab'];
+      }
+
+      const storedActive = String(localStorage.getItem(activeSubscriptionKey) || 'Local').trim();
+      activeSubscription = subscriptionProfiles.includes(storedActive) ? storedActive : 'Local';
+    }
+
+    function saveSubscriptionProfiles() {
+      localStorage.setItem(subscriptionProfilesKey, JSON.stringify(subscriptionProfiles));
+      localStorage.setItem(activeSubscriptionKey, activeSubscription);
+    }
+
+    function inferDefaultConnectorUrlForProfile(profileName) {
+      const name = String(profileName || '').toLowerCase();
+      if (name.includes('azure') || name.includes('devsecops') || name.includes('prod')) {
+        return '/inputs/sample-targets-azure-devsecops.json';
+      }
+      return '/inputs/sample-targets.json';
+    }
+
+    function loadConnectorSettings() {
+      try {
+        const rawMap = localStorage.getItem(profileConnectorMapKey);
+        profileConnectorMap = rawMap ? JSON.parse(rawMap) : {};
+      } catch {
+        profileConnectorMap = {};
+      }
+      autoSyncOnProfile = localStorage.getItem(autoSyncOnProfileKey) === 'true';
+      autoSyncOnProfileEl.checked = autoSyncOnProfile;
+    }
+
+    function loadConnectorHealth() {
+      try {
+        const raw = localStorage.getItem(connectorHealthKey);
+        const parsed = raw ? JSON.parse(raw) : null;
+        if (parsed && typeof parsed === 'object') {
+          connectorHealth = {
+            status: String(parsed.status || 'idle'),
+            lastSyncAt: String(parsed.lastSyncAt || ''),
+            lastUrl: String(parsed.lastUrl || ''),
+            lastMode: String(parsed.lastMode || ''),
+            error: String(parsed.error || '')
+          };
+        }
+      } catch {
+        connectorHealth = { status: 'idle', lastSyncAt: '', lastUrl: '', lastMode: '', error: '' };
+      }
+    }
+
+    function setConnectorHealth(next) {
+      connectorHealth = {
+        ...connectorHealth,
+        ...next
+      };
+      localStorage.setItem(connectorHealthKey, JSON.stringify(connectorHealth));
+      renderConnectorHealth();
+    }
+
+    function renderConnectorHealth() {
+      const status = String(connectorHealth.status || 'idle');
+      connectorHealthStatusEl.className = `health-chip ${status === 'ok' ? 'ok' : (status === 'error' ? 'error' : 'idle')}`;
+      connectorHealthStatusEl.textContent = status.toUpperCase();
+
+      const parts = [];
+      if (connectorHealth.lastSyncAt) {
+        parts.push(`Son Sync: ${new Date(connectorHealth.lastSyncAt).toLocaleString('tr-TR')}`);
+      }
+      if (connectorHealth.lastMode) {
+        parts.push(`Mod: ${connectorHealth.lastMode}`);
+      }
+      if (connectorHealth.lastUrl) {
+        parts.push(`Source: ${connectorHealth.lastUrl}`);
+      }
+      if (connectorHealth.error) {
+        parts.push(`Hata: ${connectorHealth.error}`);
+      }
+
+      connectorHealthMetaEl.textContent = parts.length > 0 ? parts.join(' | ') : 'Son sync henuz yok.';
+    }
+
+    function saveConnectorSettings() {
+      localStorage.setItem(profileConnectorMapKey, JSON.stringify(profileConnectorMap));
+      localStorage.setItem(autoSyncOnProfileKey, String(autoSyncOnProfile));
+    }
+
+    function autoFillConnectorForActiveProfile() {
+      const mapped = String(profileConnectorMap[activeSubscription] || '').trim();
+      const fallback = inferDefaultConnectorUrlForProfile(activeSubscription);
+      connectorUrlEl.value = mapped || fallback;
+    }
+
+    function rememberConnectorForActiveProfile(rawUrl) {
+      const url = String(rawUrl || '').trim();
+      if (!url) return;
+      profileConnectorMap[activeSubscription] = url;
+      localStorage.setItem(connectorUrlKey, url);
+      saveConnectorSettings();
+    }
+
+    function renderSubscriptionOptions() {
+      subscriptionSelectEl.innerHTML = subscriptionProfiles
+        .map((name) => `<option value="${esc(name)}">Subscription: ${esc(name)}</option>`)
+        .join('');
+      subscriptionSelectEl.value = activeSubscription;
+    }
+
+    function makeStackUrl(host, port, path, protocol = 'http', hostOverride = '') {
+      const rawHost = hostOverride || host || defaultStackHost;
+      const cleanHost = String(rawHost).trim().replace(/^https?:\/\//i, '').replace(/\/$/, '');
+      const cleanPath = String(path || '/').startsWith('/') ? String(path || '/') : `/${String(path || '/')}`;
+      const cleanProtocol = String(protocol || 'http').toLowerCase() === 'https' ? 'https' : 'http';
+      const withPort = Number(port) > 0 ? `${cleanHost}:${port}` : cleanHost;
+      return `${cleanProtocol}://${withPort}${cleanPath}`;
+    }
+
+    function getPresetEntries(presetKey) {
+      if (presetKey === 'allinone') {
+        return [...STACK_PRESETS.core, ...STACK_PRESETS.observability, ...STACK_PRESETS.automation, ...STACK_PRESETS.azuredevsecops];
+      }
+      return STACK_PRESETS[presetKey] || [];
+    }
+
+    function addStackTargets(presetKey, host, intervalMs) {
+      const entries = getPresetEntries(presetKey);
+      if (entries.length === 0) return { added: 0, skipped: 0 };
+
+      let added = 0;
+      let skipped = 0;
+
+      for (const entry of entries) {
+        const candidate = normalizeTarget({
+          name: entry.name,
+          url: makeStackUrl(host, entry.port, entry.path, entry.protocol, entry.hostOverride),
+          method: 'GET',
+          intervalMs,
+          category: entry.category,
+          subscription: activeSubscription
+        });
+        const exists = targets.some((x) => x.method === candidate.method && x.url === candidate.url && String(x.subscription || 'Local') === String(candidate.subscription || 'Local'));
+        if (exists) {
+          skipped += 1;
+          continue;
+        }
+        targets.push(candidate);
+        startTarget(candidate);
+        added += 1;
+      }
+
+      saveLocalTargets(targets);
+      render();
+      return { added, skipped };
+    }
+
+    function exportTargetsForActiveSubscription() {
+      const scoped = targets.filter((t) => String(t.subscription || 'Local') === activeSubscription);
+      const payload = {
+        version: 1,
+        exportedAt: new Date().toISOString(),
+        subscription: activeSubscription,
+        targets: scoped
+      };
+      const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      const stamp = new Date().toISOString().replace(/[.:]/g, '-');
+      a.href = url;
+      a.download = `apiflow-${activeSubscription.replace(/\s+/g, '-').toLowerCase()}-${stamp}.json`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(url);
+      log(`Aktif profil disa aktarildi: ${activeSubscription}`);
+    }
+
+    async function fetchConnectorItems(rawUrl) {
+      const url = String(rawUrl || '').trim();
+      if (!url) {
+        throw new Error('Connector URL bos olamaz');
+      }
+
+      const response = await fetch(url);
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}`);
+      }
+      const text = await response.text();
+      let parsed;
+      try {
+        parsed = JSON.parse(text);
+      } catch {
+        throw new Error('Connector JSON formatinda olmali');
+      }
+      const items = Array.isArray(parsed) ? parsed : (Array.isArray(parsed.targets) ? parsed.targets : []);
+      if (!Array.isArray(items) || items.length === 0) {
+        throw new Error('Connector kaynagi gecerli target listesi icermiyor');
+      }
+      return { url, items };
+    }
+
+    async function exportCommitReadyBundle() {
+      const scopedTargets = targets.filter((t) => String(t.subscription || 'Local') === activeSubscription);
+      const payload = {
+        subscription: activeSubscription,
+        connectorUrl: String(connectorUrlEl.value || '').trim(),
+        connectorHealth,
+        dryRunPlan: lastDryRunPlan
+          ? {
+            add: lastDryRunPlan.toAdd.length,
+            update: lastDryRunPlan.toUpdate.length,
+            delete: lastDryRunPlan.toDelete.length
+          }
+          : null,
+        targets: scopedTargets
+      };
+
+      const res = await fetch('/api/connector/export', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+
+      if (!res.ok) {
+        const body = await res.json().catch(() => ({}));
+        throw new Error(body.error || `HTTP ${res.status}`);
+      }
+
+      return res.json();
+    }
+
+    function getTargetSyncKey(target) {
+      return `${String(target.method || 'GET').toUpperCase()}|${String(target.url || '').trim()}|${String(target.subscription || 'Local')}`;
+    }
+
+    function buildConnectorSyncPlan(items) {
+      const incoming = items
+        .filter(isValidImportedTarget)
+        .map((x) => normalizeTarget({
+          ...x,
+          subscription: activeSubscription,
+          category: x.category || 'custom'
+        }));
+
+      const currentScoped = targets.filter((t) => String(t.subscription || 'Local') === activeSubscription);
+      const currentMap = new Map(currentScoped.map((t) => [getTargetSyncKey(t), t]));
+      const incomingMap = new Map();
+
+      for (const item of incoming) {
+        const key = getTargetSyncKey(item);
+        const existing = currentMap.get(key);
+        if (existing) {
+          item.id = existing.id;
+        }
+        incomingMap.set(key, item);
+      }
+
+      const toAdd = [];
+      const toUpdate = [];
+      const toDelete = [];
+
+      for (const [key, incomingItem] of incomingMap.entries()) {
+        const existing = currentMap.get(key);
+        if (!existing) {
+          toAdd.push(incomingItem);
+          continue;
+        }
+        const changed =
+          existing.name !== incomingItem.name ||
+          existing.intervalMs !== incomingItem.intervalMs ||
+          existing.category !== incomingItem.category ||
+          Boolean(existing.paused) !== Boolean(incomingItem.paused);
+        if (changed) {
+          toUpdate.push(incomingItem);
+        }
+      }
+
+      for (const [key, existing] of currentMap.entries()) {
+        if (!incomingMap.has(key)) {
+          toDelete.push(existing);
+        }
+      }
+
+      return {
+        incomingTargets: [...incomingMap.values()],
+        toAdd,
+        toUpdate,
+        toDelete
+      };
+    }
+
+    function logSyncPlan(plan, mode = 'Dry Run') {
+      log(`${mode} -> eklenecek:${plan.toAdd.length} guncellenecek:${plan.toUpdate.length} silinecek:${plan.toDelete.length}`);
+      const previewNames = [
+        ...plan.toAdd.slice(0, 2).map((x) => `+ ${x.name}`),
+        ...plan.toUpdate.slice(0, 2).map((x) => `~ ${x.name}`),
+        ...plan.toDelete.slice(0, 2).map((x) => `- ${x.name}`)
+      ];
+      if (previewNames.length > 0) {
+        log(`Plan: ${previewNames.join(' | ')}`);
+      }
+    }
+
+    function renderDryRunPanel(plan) {
+      if (!plan) {
+        dryRunSummaryEl.innerHTML = [
+          '<div class="dryrun-pill">Add: 0</div>',
+          '<div class="dryrun-pill">Update: 0</div>',
+          '<div class="dryrun-pill">Delete: 0</div>'
+        ].join('');
+        dryRunPreviewEl.textContent = 'Dry Run henuz calistirilmadi.';
+        return;
+      }
+
+      dryRunSummaryEl.innerHTML = [
+        `<div class="dryrun-pill">Add: ${plan.toAdd.length}</div>`,
+        `<div class="dryrun-pill">Update: ${plan.toUpdate.length}</div>`,
+        `<div class="dryrun-pill">Delete: ${plan.toDelete.length}</div>`
+      ].join('');
+
+      const lines = [
+        ...plan.toAdd.slice(0, 4).map((x) => `+ ${x.name}`),
+        ...plan.toUpdate.slice(0, 4).map((x) => `~ ${x.name}`),
+        ...plan.toDelete.slice(0, 4).map((x) => `- ${x.name}`)
+      ];
+      dryRunPreviewEl.textContent = lines.length > 0 ? lines.join(' | ') : 'Degisiklik bulunmadi.';
+    }
+
+    function applySyncPlan(plan) {
+      const deleteIds = new Set(plan.toDelete.map((t) => t.id));
+      for (const id of deleteIds) {
+        stopTarget(id);
+        state.delete(id);
+        errorCounts.delete(id);
+        trendMap.delete(id);
+      }
+
+      const others = targets.filter((t) => String(t.subscription || 'Local') !== activeSubscription);
+      targets = [...others, ...plan.incomingTargets];
+      saveLocalTargets(targets);
+      restartAllTargets();
+      updateBanner();
+      render();
+    }
+
+    async function runDryRunSync() {
+      const { url, items } = await fetchConnectorItems(connectorUrlEl.value);
+      const plan = buildConnectorSyncPlan(items);
+      lastDryRunPlan = plan;
+      rememberConnectorForActiveProfile(url);
+      setConnectorHealth({
+        status: 'ok',
+        lastSyncAt: new Date().toISOString(),
+        lastUrl: url,
+        lastMode: 'dry-run',
+        error: ''
+      });
+      logSyncPlan(plan, 'Dry Run');
+      renderDryRunPanel(plan);
+      return plan;
+    }
+
+    async function runAutoSyncForActiveProfile() {
+      try {
+        const plan = await runDryRunSync();
+        applySyncPlan(plan);
+        lastDryRunPlan = null;
+        renderDryRunPanel(null);
+        setConnectorHealth({ lastMode: 'auto-sync' });
+        log(`Auto Sync uygulandi: ${activeSubscription}`);
+      } catch (err) {
+        setConnectorHealth({
+          status: 'error',
+          lastSyncAt: new Date().toISOString(),
+          lastMode: 'auto-sync',
+          error: String(err.message || err)
+        });
+        log(`Auto Sync hatasi: ${esc(String(err.message || err))}`);
+      }
+    }
+
+    function rememberSample(targetId, probeResult) {
+      const prev = trendMap.get(targetId) || [];
+      const next = [...prev, {
+        ok: Boolean(probeResult.ok),
+        latencyMs: Math.max(0, Number(probeResult.latencyMs || 0)),
+        status: Number(probeResult.status || 0)
+      }].slice(-12);
+      trendMap.set(targetId, next);
+    }
+
+    function buildSmoothCurvePath(points) {
+      if (!Array.isArray(points) || points.length === 0) return '';
+      if (points.length === 1) return `M ${points[0].x} ${points[0].y}`;
+
+      let d = `M ${points[0].x} ${points[0].y}`;
+      for (let i = 0; i < points.length - 1; i += 1) {
+        const p0 = points[Math.max(0, i - 1)];
+        const p1 = points[i];
+        const p2 = points[i + 1];
+        const p3 = points[Math.min(points.length - 1, i + 2)];
+
+        const cp1x = p1.x + (p2.x - p0.x) / 6;
+        const cp1y = p1.y + (p2.y - p0.y) / 6;
+        const cp2x = p2.x - (p3.x - p1.x) / 6;
+        const cp2y = p2.y - (p3.y - p1.y) / 6;
+
+        d += ` C ${cp1x.toFixed(1)} ${cp1y.toFixed(1)}, ${cp2x.toFixed(1)} ${cp2y.toFixed(1)}, ${p2.x.toFixed(1)} ${p2.y.toFixed(1)}`;
+      }
+      return d;
+    }
+
+    function readTrend(targetId) {
+      const samples = trendMap.get(targetId) || [];
+      if (samples.length === 0) {
+        return {
+          avgLatency: 0,
+          successRate: 0,
+          barsHtml: '<div class="spark-bar" style="height: 10px"></div>'.repeat(12),
+          curvePath: 'M 0 50 C 3 50, 6 50, 9 50 C 12 50, 15 50, 18 50 C 21 50, 24 50, 27 50 C 30 50, 33 50, 36 50 C 39 50, 42 50, 45 50 C 48 50, 51 50, 54 50 C 57 50, 60 50, 63 50 C 66 50, 69 50, 72 50 C 75 50, 78 50, 81 50 C 84 50, 87 50, 90 50 C 93 50, 96 50, 99 50',
+          curveArea: 'M 0 50 L 9 50 L 18 50 L 27 50 L 36 50 L 45 50 L 54 50 L 63 50 L 72 50 L 81 50 L 90 50 L 99 50 L 99 56 L 0 56 Z',
+          curveStroke: '#59b7ff',
+          waveLevel: 20,
+          spread: 17,
+          modeLabel: 'Tuketim Modu',
+          modeColor: 'var(--consumption)',
+          clusterTone: 'rgba(255, 122, 89, 0.88)',
+          clusterCaption: 'Henuz veri yok'
+        };
+      }
+
+      const totalLatency = samples.reduce((sum, x) => sum + x.latencyMs, 0);
+      const success = samples.filter((x) => x.ok).length;
+      const avgLatency = Math.round(totalLatency / samples.length);
+      const successRate = Math.round((success / samples.length) * 100);
+      const maxLatency = Math.max(...samples.map((x) => x.latencyMs), 100);
+
+      const barsHtml = samples
+        .map((s) => {
+          const ratio = Math.max(0.14, s.latencyMs / maxLatency);
+          const h = Math.round(8 + ratio * 48);
+          const cls = s.ok ? 'spark-bar' : 'spark-bar danger';
+          return `<div class="${cls}" style="height:${h}px"></div>`;
+        })
+        .join('')
+        .padEnd(0);
+
+      const paddedBars = (() => {
+        const count = samples.length;
+        if (count >= 12) return barsHtml;
+        const filler = '<div class="spark-bar" style="height: 8px; opacity: 0.2"></div>'.repeat(12 - count);
+        return filler + barsHtml;
+      })();
+
+      const curveData = (() => {
+        const values = samples.map((s) => Math.max(0, s.latencyMs));
+        if (values.length < 12) {
+          const missing = new Array(12 - values.length).fill(0);
+          values.unshift(...missing);
+        }
+        const h = 56;
+        const topPad = 6;
+        const bottomPad = 6;
+        const graphH = h - topPad - bottomPad;
+        const denom = Math.max(maxLatency, 100);
+        const points = values.slice(-12).map((value, idx) => {
+          const x = (idx * 99) / 11;
+          const y = topPad + graphH - (value / denom) * graphH;
+          return { x, y };
+        });
+        const linePath = buildSmoothCurvePath(points);
+        const areaPoints = points.map((p) => `${p.x.toFixed(1)},${p.y.toFixed(1)}`);
+        const areaPath = `M ${areaPoints[0]} L ${areaPoints.slice(1).join(' L ')} L 99,56 L 0,56 Z`;
+        return {
+          linePath,
+          area: areaPath
+        };
+      })();
+
+      const consumptionScore = Math.min(100, Math.round((avgLatency / 1200) * 100));
+      const gainScore = Math.round(successRate * 0.7 + Math.max(0, 100 - consumptionScore) * 0.3);
+      const gainMode = gainScore >= consumptionScore;
+
+      return {
+        avgLatency,
+        successRate,
+        barsHtml: paddedBars,
+        curvePath: curveData.linePath,
+        curveArea: curveData.area,
+        curveStroke: successRate >= 90 ? '#50f5cf' : (successRate >= 70 ? '#59b7ff' : '#ff7a59'),
+        waveLevel: Math.max(16, Math.min(84, 84 - Math.round((avgLatency / 1600) * 60))),
+        spread: Math.max(7, Math.min(22, 22 - Math.round((successRate / 100) * 12))),
+        modeLabel: gainMode ? 'Kazanc Modu' : 'Tuketim Modu',
+        modeColor: gainMode ? 'var(--gain)' : 'var(--consumption)',
+        clusterTone: gainMode ? 'rgba(80, 245, 207, 0.9)' : 'rgba(255, 122, 89, 0.9)',
+        clusterCaption: gainMode ? 'Kume stabil, verim yuksek' : 'Kume daginik, tuketim yuksek'
       };
     }
 
@@ -485,14 +1507,18 @@
         const searchMatched =
           !query ||
           target.name.toLowerCase().includes(query) ||
-          target.url.toLowerCase().includes(query);
+          target.url.toLowerCase().includes(query) ||
+          String(target.category || '').toLowerCase().includes(query) ||
+          String(target.subscription || '').toLowerCase().includes(query);
+
+        const subscriptionMatched = String(target.subscription || 'Local') === activeSubscription;
 
         const statusMatched =
           statusFilter === 'all' ||
           (statusFilter === 'up' && normalizeStatus(item) === 'up') ||
           (statusFilter === 'down' && normalizeStatus(item) === 'down');
 
-        return searchMatched && statusMatched;
+        return searchMatched && statusMatched && subscriptionMatched;
       });
     }
 
@@ -549,7 +1575,7 @@
 
       const merged = new Map();
       for (const t of [...targets, ...normalized]) {
-        merged.set(`${t.method}|${t.url}`, normalizeTarget(t));
+        merged.set(`${t.method}|${t.url}|${String(t.subscription || 'Local')}`, normalizeTarget(t));
       }
 
       targets = [...merged.values()];
@@ -572,29 +1598,88 @@
 
       for (const target of filtered) {
         const item = state.get(target.id);
+        const trend = readTrend(target.id);
+        const showBars = shapeMode === 'all' || shapeMode === 'bars';
+        const showCurve = shapeMode === 'all' || shapeMode === 'curve';
+        const showWave = shapeMode === 'all' || shapeMode === 'wave';
+        const showCluster = shapeMode === 'all' || shapeMode === 'cluster';
+
+        const barsBlock = showBars ? `
+            <div class="viz-box">
+              <div class="tiny">Bar Dalga</div>
+              <div class="spark-bars">${trend.barsHtml}</div>
+            </div>
+        ` : '';
+
+        const waveBlock = showWave ? `
+            <div class="viz-box">
+              <div class="tiny">Akis Seviyesi</div>
+              <div class="wave-wrap" style="--level:${trend.waveLevel}%">
+                <div class="wave"></div>
+                <div class="wave two"></div>
+              </div>
+            </div>
+        ` : '';
+
+        const curveBlock = showCurve ? `
+            <div class="viz-box">
+              <div class="tiny">Egrisellik Trendi</div>
+              <div class="curve-wrap" style="--curve-stroke:${trend.curveStroke}">
+                <svg class="curve-svg" viewBox="0 0 100 56" preserveAspectRatio="none" aria-hidden="true" focusable="false">
+                  <path class="curve-area" d="${trend.curveArea}"></path>
+                  <path class="curve-path" d="${trend.curvePath}"></path>
+                </svg>
+              </div>
+            </div>
+        ` : '';
+
+        const clusterBlock = showCluster ? `
+          <div class="viz-box">
+            <div class="tiny">3D Kume Dagilimi</div>
+            <div class="cluster" style="--cluster-spread:${trend.spread}px; --cluster-tone:${trend.clusterTone}">
+              <span></span><span></span><span></span><span></span><span></span><span></span><span></span>
+            </div>
+            <div class="cluster-caption">${trend.clusterCaption}</div>
+          </div>
+        ` : '';
 
         const card = document.createElement('article');
         card.className = 'card';
         card.innerHTML = `
-          <div class="card-actions">
-            <button class="card-act" type="button" data-action="toggle" data-id="${esc(target.id)}" title="Pause/Resume">${target.paused ? '▶' : '⏸'}</button>
-            <button class="card-act" type="button" data-action="edit" data-id="${esc(target.id)}" title="Duzenle">✎</button>
-            <button class="card-act" type="button" data-action="delete" data-id="${esc(target.id)}" title="Sil">✕</button>
+          <div class="card-actions${openMenuId === target.id ? ' open' : ''}">
+            <div class="card-menu">
+              <button class="card-menu-item" type="button" data-action="toggle" data-id="${esc(target.id)}"><span class="i">${target.paused ? '▶' : '⏸'}</span><span>${target.paused ? 'Devam Ettir' : 'Duraklat'}</span></button>
+              <button class="card-menu-item" type="button" data-action="edit" data-id="${esc(target.id)}"><span class="i">✎</span><span>Duzenle</span></button>
+              <button class="card-menu-item danger" type="button" data-action="delete" data-id="${esc(target.id)}"><span class="i">🗑</span><span>Sil</span></button>
+            </div>
+            <button class="gear-btn" type="button" data-action="menu" data-id="${esc(target.id)}" title="Kart menusu">⚙</button>
           </div>
           <div class="row">
             <div class="name">${esc(target.name)}</div>
             ${statusBadge(item)}
           </div>
+          <div class="service-chip ${esc(target.category || 'custom')}">${esc((target.category || 'custom').toUpperCase())}</div>
+          <div class="tiny">Subscription: ${esc(target.subscription || 'Local')}</div>
           <div class="url">${esc(target.method)} ${esc(target.url)}</div>
-          <div class="tiny">Latency: ${item ? item.latencyMs + ' ms' : '-'}</div>
-          <div class="tiny">Son kontrol: ${item ? new Date(item.checkedAt).toLocaleTimeString('tr-TR') : '-'}</div>
+          <div class="metric-line"><span>Ort. Tuketim</span><strong>${trend.avgLatency || '-'} ms</strong></div>
+          <div class="metric-line"><span>Kazanc Skoru</span><strong>${trend.successRate}%</strong></div>
           ${target.paused ? '<div class="muted-chip">Duraklatildi</div>' : ''}
-          <pre>${esc(item?.json ? JSON.stringify(item.json, null, 2) : (item?.preview || 'Henuz cevap yok'))}</pre>
+          <div class="visual-grid">
+            ${barsBlock}
+            ${curveBlock}
+            ${waveBlock}
+          </div>
+          ${clusterBlock}
+          <div class="mode-chip" style="--mode-color:${trend.modeColor}">
+            <span class="mode-dot"></span>
+            ${trend.modeLabel}
+          </div>
+          <div class="tiny">Son kontrol: ${item ? new Date(item.checkedAt).toLocaleTimeString('tr-TR') : '-'}</div>
         `;
         cardsEl.appendChild(card);
       }
 
-      summaryEl.textContent = `Toplam: ${targets.length} | Up: ${up} | Down/Warn: ${down}`;
+      summaryEl.textContent = `Subscription: ${activeSubscription} | Toplam: ${targets.length} | Up: ${up} | Down/Warn: ${down}`;
       filterCountEl.textContent = `Gosterilen: ${filtered.length} / ${targets.length}`;
     }
 
@@ -615,6 +1700,7 @@
         });
         const result = await res.json();
         state.set(target.id, result);
+        rememberSample(target.id, result);
 
         if (result.ok) {
           trackSuccess(target.id);
@@ -633,6 +1719,11 @@
           preview: '',
           json: null,
           error: String(err)
+        });
+        rememberSample(target.id, {
+          ok: false,
+          status: 0,
+          latencyMs: 0
         });
         trackFailure(target.id);
         log(`${esc(target.name)} -> ERROR ${esc(String(err))}`);
@@ -681,17 +1772,30 @@
       localStorage.setItem(storeKey, JSON.stringify(arr));
     }
 
+    function loadShapeMode() {
+      const fromStorage = String(localStorage.getItem(shapeModeKey) || 'all');
+      const allowed = ['all', 'bars', 'curve', 'wave', 'cluster'];
+      shapeMode = allowed.includes(fromStorage) ? fromStorage : 'all';
+      shapeModeEl.value = shapeMode;
+    }
+
+    function saveShapeMode(nextMode) {
+      shapeMode = nextMode;
+      localStorage.setItem(shapeModeKey, nextMode);
+    }
+
     addForm.addEventListener('submit', (e) => {
       e.preventDefault();
       const t = normalizeTarget({
         name: document.getElementById('name').value.trim(),
         url: document.getElementById('url').value.trim(),
         method: document.getElementById('method').value,
-        intervalMs: Number(document.getElementById('interval').value || 10000)
+        intervalMs: Number(document.getElementById('interval').value || 10000),
+        subscription: activeSubscription
       });
       if (!t.name || !t.url) return;
 
-      const duplicate = targets.some((x) => x.method === t.method && x.url === t.url);
+      const duplicate = targets.some((x) => x.method === t.method && x.url === t.url && String(x.subscription || 'Local') === activeSubscription);
       if (duplicate) {
         log(`Ayni method+url mevcut: ${esc(t.url)}`);
         return;
@@ -714,7 +1818,14 @@
       const target = targets.find((t) => t.id === id);
       if (!target) return;
 
+      if (action === 'menu') {
+        openMenuId = openMenuId === id ? null : id;
+        render();
+        return;
+      }
+
       if (action === 'delete') {
+        openMenuId = null;
         stopTarget(id);
         targets = targets.filter((t) => t.id !== id);
         state.delete(id);
@@ -727,6 +1838,7 @@
       }
 
       if (action === 'toggle') {
+        openMenuId = null;
         target.paused = !target.paused;
         if (target.paused) {
           stopTarget(id);
@@ -741,6 +1853,7 @@
       }
 
       if (action === 'edit') {
+        openMenuId = null;
         editingId = id;
         editNameEl.value = target.name;
         editUrlEl.value = target.url;
@@ -748,6 +1861,20 @@
         editIntervalEl.value = String(target.intervalMs);
         editModalEl.classList.add('open');
         editModalEl.setAttribute('aria-hidden', 'false');
+      }
+    });
+
+    document.addEventListener('click', (e) => {
+      if (!e.target.closest('.card-actions') && openMenuId) {
+        openMenuId = null;
+        render();
+      }
+    });
+
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape' && openMenuId) {
+        openMenuId = null;
+        render();
       }
     });
 
@@ -769,7 +1896,7 @@
 
       if (!nextName || !nextUrl) return;
 
-      const duplicate = targets.some((x) => x.id !== target.id && x.method === nextMethod && x.url === nextUrl);
+      const duplicate = targets.some((x) => x.id !== target.id && x.method === nextMethod && x.url === nextUrl && String(x.subscription || 'Local') === String(target.subscription || 'Local'));
       if (duplicate) {
         log(`Duzenleme reddedildi, ayni method+url mevcut: ${esc(nextUrl)}`);
         return;
@@ -795,6 +1922,13 @@
     searchBoxEl.addEventListener('input', (e) => {
       searchQuery = String(e.target.value || '');
       render();
+    });
+
+    shapeModeEl.addEventListener('change', (e) => {
+      const nextMode = String(e.target.value || 'all');
+      saveShapeMode(nextMode);
+      render();
+      log(`Sekil modu: ${nextMode}`);
     });
 
     filterButtons.forEach((btn) => {
@@ -839,6 +1973,10 @@
       exportTargets();
     });
 
+    exportActiveBtn.addEventListener('click', () => {
+      exportTargetsForActiveSubscription();
+    });
+
     importTargetsBtn.addEventListener('click', () => {
       importTargetsFile.click();
     });
@@ -863,6 +2001,105 @@
       }
     });
 
+    addStackBtn.addEventListener('click', () => {
+      const presetKey = String(stackPresetEl.value || 'core');
+      const host = String(stackHostEl.value || defaultStackHost).trim() || defaultStackHost;
+      const intervalMs = Math.max(3000, Number(stackIntervalEl.value || 10000));
+
+      const result = addStackTargets(presetKey, host, intervalMs);
+      log(`Stack eklendi (${presetKey}): +${result.added} / skip ${result.skipped}`);
+    });
+
+    quickAllinoneBtn.addEventListener('click', () => {
+      const host = String(stackHostEl.value || defaultStackHost).trim() || defaultStackHost;
+      const intervalMs = Math.max(3000, Number(stackIntervalEl.value || 10000));
+      const result = addStackTargets('allinone', host, intervalMs);
+      log(`Hizli kurulum (allinone): +${result.added} / skip ${result.skipped}`);
+    });
+
+    quickAzureBtn.addEventListener('click', () => {
+      const host = String(stackHostEl.value || defaultStackHost).trim() || defaultStackHost;
+      const intervalMs = Math.max(3000, Number(stackIntervalEl.value || 10000));
+      const result = addStackTargets('azuredevsecops', host, intervalMs);
+      log(`Hizli kurulum (azuredevsecops): +${result.added} / skip ${result.skipped}`);
+    });
+
+    dryRunSyncBtn.addEventListener('click', async () => {
+      try {
+        await runDryRunSync();
+      } catch (err) {
+        setConnectorHealth({
+          status: 'error',
+          lastSyncAt: new Date().toISOString(),
+          lastMode: 'dry-run',
+          error: String(err.message || err)
+        });
+        log(`Dry Run hatasi: ${esc(String(err.message || err))}`);
+      }
+    });
+
+    applyDryRunBtn.addEventListener('click', () => {
+      if (!lastDryRunPlan) {
+        log('Once Dry Run yapmalisin');
+        return;
+      }
+      applySyncPlan(lastDryRunPlan);
+      log(`Dry Run plani uygulandi: ${activeSubscription}`);
+      setConnectorHealth({
+        status: 'ok',
+        lastSyncAt: new Date().toISOString(),
+        lastMode: 'apply',
+        error: ''
+      });
+      lastDryRunPlan = null;
+      renderDryRunPanel(null);
+    });
+
+    commitReadyExportBtn.addEventListener('click', async () => {
+      try {
+        const result = await exportCommitReadyBundle();
+        log(`Commit-ready export hazir: ${result.files.join(' | ')}`);
+      } catch (err) {
+        log(`Commit-ready export hatasi: ${esc(String(err.message || err))}`);
+      }
+    });
+
+    autoSyncOnProfileEl.addEventListener('change', () => {
+      autoSyncOnProfile = autoSyncOnProfileEl.checked;
+      saveConnectorSettings();
+      log(`Auto Sync modu: ${autoSyncOnProfile ? 'acik' : 'kapali'}`);
+    });
+
+    addSubscriptionBtn.addEventListener('click', async () => {
+      const candidate = String(newSubscriptionNameEl.value || '').trim();
+      if (!candidate) return;
+      if (!subscriptionProfiles.includes(candidate)) {
+        subscriptionProfiles.push(candidate);
+      }
+      activeSubscription = candidate;
+      saveSubscriptionProfiles();
+      renderSubscriptionOptions();
+      autoFillConnectorForActiveProfile();
+      render();
+      newSubscriptionNameEl.value = '';
+      log(`Subscription profili eklendi: ${candidate}`);
+      if (autoSyncOnProfile) {
+        await runAutoSyncForActiveProfile();
+      }
+    });
+
+    subscriptionSelectEl.addEventListener('change', async () => {
+      const next = String(subscriptionSelectEl.value || 'Local');
+      activeSubscription = next;
+      saveSubscriptionProfiles();
+      autoFillConnectorForActiveProfile();
+      render();
+      log(`Subscription degisti: ${next}`);
+      if (autoSyncOnProfile) {
+        await runAutoSyncForActiveProfile();
+      }
+    });
+
     async function init() {
       const base = await fetch('/api/targets').then(r => r.json()).catch(() => []);
       const local = loadLocalTargets();
@@ -870,11 +2107,20 @@
       const map = new Map();
       for (const t of [...base, ...local]) {
         const normalized = normalizeTarget(t);
-        map.set(`${normalized.method}|${normalized.url}`, normalized);
+        map.set(`${normalized.method}|${normalized.url}|${String(normalized.subscription || 'Local')}`, normalized);
       }
       targets = [...map.values()];
       saveLocalTargets(targets);
+      loadSubscriptionProfiles();
+      renderSubscriptionOptions();
+      loadConnectorSettings();
+      loadConnectorHealth();
       loadAlertSettings();
+      loadShapeMode();
+      stackHostEl.value = defaultStackHost;
+      autoFillConnectorForActiveProfile();
+      renderConnectorHealth();
+      renderDryRunPanel(null);
 
       for (const t of targets) startTarget(t);
       render();

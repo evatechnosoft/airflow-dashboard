@@ -1,0 +1,34 @@
+services:
+  db:
+    image: postgres:16-alpine
+    container_name: apiflow-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: apiflow_monitor
+    volumes:
+      - pg_data:/var/lib/postgresql/data
+
+  app:
+    image: node:20-alpine
+    container_name: apiflow-app
+    working_dir: /app
+    restart: unless-stopped
+    environment:
+      TARGET_REPOSITORY: drizzle-pg
+      DATABASE_URL: postgresql://postgres:postgres@db:5432/apiflow_monitor
+      PROBE_MODE: mock
+      HOST: 0.0.0.0
+      PORT: 9201
+      PUBLIC_HOST: 192.168.1.186
+    ports:
+      - "9201:9201"
+    volumes:
+      - ./:/app
+    depends_on:
+      - db
+    command: sh -c "npm install && if [ \"$${NODE_ENV}\" = 'development' ]; then npx nodemon server.js; else npm start; fi"
+
+volumes:
+  pg_data:

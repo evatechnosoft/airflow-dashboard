@@ -1,41 +1,127 @@
+const express = require('express');
+const os = require('os');
 const fs = require('fs');
 const path = require('path');
-const express = require('express');
+const { buildContainer } = require('./src/container');
+const { normalizeTarget } = require('./src/utils/targetModel');
+const { appendJsonLine, buildIoPaths } = require('./src/utils/ioLog');
+const { ProbeScheduler } = require('./src/scheduler');
 
 const app = express();
-const PORT = Number(process.env.PORT || 8095);
+const HOST = String(process.env.HOST || '0.0.0.0');
+const PORT = Number(process.env.PORT || 9201);
+const PORT_CANDIDATES = String(process.env.PORT_CANDIDATES || `${PORT},9202,9203`)
+  .split(',')
+  .map((x) => Number(String(x).trim()))
+  .filter((x) => Number.isFinite(x) && x > 0);
+
+function resolvePublicHost() {
+  if (process.env.PUBLIC_HOST) {
+    return String(process.env.PUBLIC_HOST);
+  }
+
+  const ifaces = os.networkInterfaces();
+  const candidates = [];
+
+  for (const entries of Object.values(ifaces)) {
+    for (const entry of entries || []) {
+      if (!entry || entry.internal || entry.family !== 'IPv4') {
+        continue;
+      }
+      candidates.push(entry.address);
+    }
+  }
+
+  const preferred = candidates.find((ip) => ip.startsWith('192.168.'))
+    || candidates.find((ip) => ip.startsWith('10.'))
+    || candidates.find((ip) => /^172\.(1[6-9]|2\d|3[0-1])\./.test(ip));
+
+  return preferred || '127.0.0.1';
+}
+
+const PUBLIC_HOST = resolvePublicHost();
 const ROOT = __dirname;
+const container = buildContainer({ rootDir: ROOT });
+const ioPaths = buildIoPaths(ROOT);
 
 app.use(express.json());
 app.use(express.static(ROOT));
 
-function classifySignal(status, errorText) {
-  if (errorText && String(errorText).toLowerCase().includes('timeout')) {
-    return 'TIMEOUT';
-  }
-  if (status >= 200 && status < 400) {
-    return 'UP';
-  }
-  if (status >= 400 && status < 500) {
-    return 'WARN';
-  }
-  if (status >= 500 || status === 0) {
-    return 'DOWN';
-  }
-  return 'DOWN';
-}
+app.get('/healthz', (_req, res) => {
+  res.status(200).json({ ok: true, at: new Date().toISOString() });
+});
 
-function sleep(ms) {
-  return new Promise((resolve) => setTimeout(resolve, ms));
-}
-
-app.get('/api/targets', (_req, res) => {
+app.get('/api/targets', async (_req, res) => {
   try {
-    const raw = fs.readFileSync(path.join(ROOT, 'targets.json'), 'utf8');
-    const targets = JSON.parse(raw);
+    const targets = await container.targetRepository.list();
     res.json(targets);
   } catch (err) {
     res.status(500).json({ error: 'targets okunamadi', detail: String(err.message || err) });
+  }
+});
+
+app.post('/api/targets', async (req, res) => {
+  try {
+    const normalized = normalizeTarget(req.body || {});
+    if (!normalized.name || !normalized.url) {
+      return res.status(400).json({ error: 'name ve url gerekli' });
+    }
+
+    const created = await container.targetRepository.create(normalized);
+    appendJsonLine(ioPaths.targetEvents, {
+      at: new Date().toISOString(),
+      event: 'target.created',
+      payload: created
+    });
+    return res.status(201).json(created);
+  } catch (err) {
+    return res.status(500).json({ error: 'target olusturulamadi', detail: String(err.message || err) });
+  }
+});
+
+app.put('/api/targets/:id', async (req, res) => {
+  try {
+    const targetId = String(req.params.id || '').trim();
+    if (!targetId) {
+      return res.status(400).json({ error: 'id gerekli' });
+    }
+
+    const updated = await container.targetRepository.update(targetId, req.body || {});
+    if (!updated) {
+      return res.status(404).json({ error: 'target bulunamadi' });
+    }
+
+    appendJsonLine(ioPaths.targetEvents, {
+      at: new Date().toISOString(),
+      event: 'target.updated',
+      payload: updated
+    });
+    return res.json(updated);
+  } catch (err) {
+    return res.status(500).json({ error: 'target guncellenemedi', detail: String(err.message || err) });
+  }
+});
+
+app.delete('/api/targets/:id', async (req, res) => {
+  try {
+    const targetId = String(req.params.id || '').trim();
+    if (!targetId) {
+      return res.status(400).json({ error: 'id gerekli' });
+    }
+
+    const deleted = await container.targetRepository.remove(targetId);
+    if (!deleted) {
+      return res.status(404).json({ error: 'target bulunamadi' });
+    }
+
+    appendJsonLine(ioPaths.targetEvents, {
+      at: new Date().toISOString(),
+      event: 'target.deleted',
+      payload: { id: targetId }
+    });
+    return res.status(204).send();
+  } catch (err) {
+    return res.status(500).json({ error: 'target silinemedi', detail: String(err.message || err) });
   }
 });
 
@@ -46,113 +132,181 @@ app.post('/api/probe', async (req, res) => {
     return res.status(400).json({ error: 'url gerekli' });
   }
 
-  const startedAt = Date.now();
-  const maxAttempts = 2;
-  const retryDelayMs = 500;
-  let lastPayload = null;
-
   try {
-    for (let attempt = 1; attempt <= maxAttempts; attempt += 1) {
-      const controller = new AbortController();
-      const timer = setTimeout(() => controller.abort(), timeoutMs);
+    appendJsonLine(ioPaths.probeInputs, {
+      at: new Date().toISOString(),
+      request: { url, method, timeoutMs }
+    });
 
-      try {
-        const response = await fetch(url, {
-          method,
-          signal: controller.signal,
-          headers: {
-            'user-agent': 'apiflow-monitor-mvp/0.1'
-          }
-        });
+    const result = await container.probeService.probe({
+      url,
+      method,
+      timeoutMs
+    });
 
-        const contentType = response.headers.get('content-type') || '';
-        const text = await response.text();
+    appendJsonLine(ioPaths.probeOutputs, {
+      at: new Date().toISOString(),
+      request: { url, method, timeoutMs },
+      response: result
+    });
 
-        let parsed = null;
-        if (contentType.includes('application/json')) {
-          try {
-            parsed = JSON.parse(text);
-          } catch {
-            parsed = null;
-          }
-        }
+    return res.status(200).json(result);
+  } catch (err) {
+    const errorPayload = {
+      ok: false,
+      status: 0,
+      latencyMs: 0,
+      contentType: '',
+      preview: '',
+      json: null,
+      checkedAt: new Date().toISOString(),
+      attempts: 1,
+      signal: 'DOWN',
+      error: String(err.message || err)
+    };
 
-        const payload = {
-          ok: response.ok,
-          status: response.status,
-          latencyMs: Date.now() - startedAt,
-          contentType,
-          preview: text.slice(0, 2000),
-          json: parsed,
-          checkedAt: new Date().toISOString(),
-          attempts: attempt,
-          signal: classifySignal(response.status, '')
-        };
+    appendJsonLine(ioPaths.probeOutputs, {
+      at: new Date().toISOString(),
+      request: { url, method, timeoutMs },
+      response: errorPayload
+    });
 
-        lastPayload = payload;
-        clearTimeout(timer);
+    res.status(200).json(errorPayload);
+  }
+});
 
-        if (response.ok || response.status < 500 || attempt === maxAttempts) {
-          return res.json(payload);
-        }
+app.post('/api/connector/export', async (req, res) => {
+  try {
+    const payload = req.body || {};
+    const subscription = String(payload.subscription || 'local').trim() || 'local';
+    const slug = subscription.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '') || 'local';
+    const ts = new Date().toISOString().replace(/[.:]/g, '-');
 
-        await sleep(retryDelayMs * attempt);
-      } catch (err) {
-        const isTimeout = err && err.name === 'AbortError';
-        const message = isTimeout ? `timeout after ${timeoutMs}ms` : String(err.message || err);
-        const payload = {
-          ok: false,
-          status: 0,
-          latencyMs: Date.now() - startedAt,
-          contentType: '',
-          preview: '',
-          json: null,
-          checkedAt: new Date().toISOString(),
-          attempts: attempt,
-          signal: classifySignal(0, message),
-          error: message
-        };
-
-        lastPayload = payload;
-        clearTimeout(timer);
-
-        if (attempt < maxAttempts) {
-          await sleep(retryDelayMs * attempt);
-          continue;
-        }
-
-        return res.status(200).json(payload);
-      }
+    const baseDir = path.join(ROOT, 'output', 'shared');
+    if (!fs.existsSync(baseDir)) {
+      fs.mkdirSync(baseDir, { recursive: true });
     }
 
-    return res.status(200).json(lastPayload || {
-      ok: false,
-      status: 0,
-      latencyMs: Date.now() - startedAt,
-      contentType: '',
-      preview: '',
-      json: null,
-      checkedAt: new Date().toISOString(),
-      attempts: maxAttempts,
-      signal: 'DOWN',
-      error: 'unknown probe failure'
+    const jsonFile = path.join(baseDir, `commit-ready-${slug}-${ts}.json`);
+    const mdFile = path.join(baseDir, `commit-ready-${slug}-${ts}.md`);
+
+    const cleaned = {
+      generatedAt: new Date().toISOString(),
+      subscription,
+      connectorUrl: String(payload.connectorUrl || ''),
+      connectorHealth: payload.connectorHealth || {},
+      dryRunPlan: payload.dryRunPlan || null,
+      targets: Array.isArray(payload.targets) ? payload.targets : []
+    };
+
+    fs.writeFileSync(jsonFile, `${JSON.stringify(cleaned, null, 2)}\n`, 'utf8');
+
+    const md = [
+      '# Commit Ready Export',
+      '',
+      `- generatedAt: ${cleaned.generatedAt}`,
+      `- subscription: ${cleaned.subscription}`,
+      `- connectorUrl: ${cleaned.connectorUrl || '-'}`,
+      `- connectorStatus: ${cleaned.connectorHealth.status || 'idle'}`,
+      `- connectorLastSyncAt: ${cleaned.connectorHealth.lastSyncAt || '-'}`,
+      `- targets: ${cleaned.targets.length}`,
+      '',
+      '## Dry Run',
+      cleaned.dryRunPlan
+        ? `- add: ${cleaned.dryRunPlan.add} | update: ${cleaned.dryRunPlan.update} | delete: ${cleaned.dryRunPlan.delete}`
+        : '- dry run plan yok',
+      '',
+      '## Suggested Commit',
+      `chore(sync): commit-ready export for ${cleaned.subscription}`,
+      ''
+    ].join('\n');
+
+    fs.writeFileSync(mdFile, md, 'utf8');
+
+    appendJsonLine(ioPaths.targetEvents, {
+      at: new Date().toISOString(),
+      event: 'connector.exported',
+      payload: {
+        subscription: cleaned.subscription,
+        files: [path.relative(ROOT, jsonFile), path.relative(ROOT, mdFile)]
+      }
+    });
+
+    return res.status(200).json({
+      ok: true,
+      files: [path.relative(ROOT, jsonFile), path.relative(ROOT, mdFile)]
     });
   } catch (err) {
-    res.status(200).json({
-      ok: false,
-      status: 0,
-      latencyMs: Date.now() - startedAt,
-      contentType: '',
-      preview: '',
-      json: null,
-      checkedAt: new Date().toISOString(),
-      attempts: maxAttempts,
-      signal: classifySignal(0, String(err.message || err)),
-      error: String(err.message || err)
+    return res.status(500).json({
+      error: 'commit-ready export olusturulamadi',
+      detail: String(err.message || err)
     });
   }
 });
 
-app.listen(PORT, () => {
-  console.log(`APIFlow Monitor MVP running on http://127.0.0.1:${PORT}`);
+function logStartup(boundPort) {
+  const mode = String(process.env.PROBE_MODE || 'mock').toLowerCase();
+  const repository = String(process.env.TARGET_REPOSITORY || 'drizzle').toLowerCase();
+  console.log(`APIFlow Monitor MVP running on http://127.0.0.1:${boundPort}`);
+  console.log(`LAN access: http://${PUBLIC_HOST}:${boundPort}`);
+  console.log(`Probe mode: ${mode} | Target repository: ${repository}`);
+}
+
+let scheduler = null;
+
+function listenWithFallback(index = 0) {
+  if (index >= PORT_CANDIDATES.length) {
+    console.error(`No available port in candidates: ${PORT_CANDIDATES.join(', ')}`);
+    process.exit(1);
+  }
+
+  const candidatePort = PORT_CANDIDATES[index];
+  const server = app.listen(candidatePort, HOST);
+
+  server.once('listening', async () => {
+    if (index > 0) {
+      console.warn(`Primary port busy, switched to fallback port ${candidatePort}`);
+    }
+    logStartup(candidatePort);
+
+    // Start probe scheduler
+    try {
+      scheduler = new ProbeScheduler(container, ioPaths, { logInterval: 60000 });
+      await scheduler.start();
+      console.log('[Server] Probe scheduler started');
+    } catch (err) {
+      console.error('[Server] Error starting probe scheduler:', err);
+      // Continue even if scheduler fails
+    }
+  });
+
+  server.once('error', (err) => {
+    if (err && err.code === 'EADDRINUSE') {
+      console.warn(`Port ${candidatePort} is in use, trying next candidate...`);
+      listenWithFallback(index + 1);
+      return;
+    }
+
+    console.error(`Server start error on port ${candidatePort}:`, err);
+    process.exit(1);
+  });
+}
+
+// Graceful shutdown
+process.on('SIGINT', () => {
+  console.log('\n[Server] SIGINT received, shutting down gracefully...');
+  if (scheduler) {
+    scheduler.stop();
+  }
+  process.exit(0);
 });
+
+process.on('SIGTERM', () => {
+  console.log('\n[Server] SIGTERM received, shutting down gracefully...');
+  if (scheduler) {
+    scheduler.stop();
+  }
+  process.exit(0);
+});
+
+listenWithFallback();

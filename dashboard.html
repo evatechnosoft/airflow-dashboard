@@ -1,0 +1,275 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>APIFlow Monitor — Dashboard</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); min-height: 100vh; padding: 20px; }
+    .container { max-width: 1200px; margin: 0 auto; }
+    .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px; background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
+    .header h1 { font-size: 24px; color: #333; }
+    .header-actions { display: flex; gap: 12px; align-items: center; }
+    .badge-container { display: flex; align-items: center; gap: 8px; padding: 8px 16px; background: #f5f5f5; border-radius: 20px; font-size: 12px; font-weight: 600; }
+    .env-badge { width: 8px; height: 8px; border-radius: 50%; background: #4ade80; animation: pulse 2s infinite; }
+    @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
+    .btn { padding: 10px 16px; background: #667eea; color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 14px; font-weight: 500; }
+    .btn:hover { background: #5568d3; }
+    .controls { display: flex; gap: 12px; margin-bottom: 20px; background: white; padding: 16px; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
+    .controls input { flex: 1; padding: 10px 12px; border: 1px solid #e0e0e0; border-radius: 6px; font-size: 14px; }
+    .cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 16px; margin-bottom: 30px; }
+    .card { background: white; border-radius: 8px; padding: 16px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); transition: transform 0.2s; }
+    .card:hover { transform: translateY(-4px); }
+    .card-header { display: flex; justify-content: space-between; align-items: start; margin-bottom: 12px; }
+    .card-title { font-size: 16px; font-weight: 600; color: #333; flex: 1; }
+    .card-status { display: flex; align-items: center; gap: 6px; font-size: 12px; font-weight: 600; padding: 4px 8px; border-radius: 4px; }
+    .status-up { background: #dcfce7; color: #166534; }
+    .status-warn { background: #fef3c7; color: #92400e; }
+    .status-down { background: #fee2e2; color: #991b1b; }
+    .status-none { background: #f3f4f6; color: #6b7280; }
+    .card-url { font-size: 12px; color: #666; margin-bottom: 12px; word-break: break-all; font-family: 'Monaco', 'Courier New', monospace; }
+    .card-info { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 12px; font-size: 12px; }
+    .info-item { display: flex; flex-direction: column; gap: 2px; }
+    .info-label { color: #999; font-size: 10px; text-transform: uppercase; }
+    .info-value { color: #333; font-weight: 500; }
+    .card-actions { display: flex; gap: 8px; }
+    .card-actions button { flex: 1; padding: 8px 12px; font-size: 12px; border: none; border-radius: 4px; cursor: pointer; }
+    .btn-edit { background: #dbeafe; color: #0369a1; }
+    .btn-delete { background: #fee2e2; color: #991b1b; }
+    .modal { display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); z-index: 1000; align-items: center; justify-content: center; }
+    .modal.open { display: flex; }
+    .modal-content { background: white; border-radius: 8px; padding: 24px; max-width: 500px; width: 100%; max-height: 90vh; overflow-y: auto; }
+    .modal-header { font-size: 18px; font-weight: 600; margin-bottom: 16px; color: #333; }
+    .modal-body { margin-bottom: 20px; }
+    .form-group { margin-bottom: 16px; display: flex; flex-direction: column; gap: 4px; }
+    .form-group label { font-size: 12px; font-weight: 600; color: #666; text-transform: uppercase; }
+    .form-group input, .form-group select { padding: 10px 12px; border: 1px solid #e0e0e0; border-radius: 6px; font-size: 14px; }
+    .modal-footer { display: flex; gap: 12px; justify-content: flex-end; }
+    .modal-footer button { padding: 10px 16px; border: none; border-radius: 6px; cursor: pointer; font-weight: 500; }
+    .btn-close { background: #e0e0e0; color: #333; }
+    .empty-state { grid-column: 1 / -1; text-align: center; padding: 60px 20px; color: #999; }
+    @media (max-width: 640px) { .cards { grid-template-columns: 1fr; } }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <div>
+        <h1>APIFlow Monitor</h1>
+      </div>
+      <div class="header-actions">
+        <div class="badge-container">
+          <div class="env-badge"></div>
+          <span id="envLabel">Environment: loading...</span>
+        </div>
+        <button class="btn" onclick="openAddModal()">+ Add Target</button>
+      </div>
+    </div>
+
+    <div class="controls">
+      <input type="text" id="filterInput" placeholder="Filter by URL or name..." onkeyup="filterCards()">
+      <button class="btn" onclick="refreshTargets()">🔄 Refresh</button>
+    </div>
+
+    <div class="cards" id="cardsContainer">
+      <div class="empty-state">
+        <div>Loading...</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal -->
+  <div class="modal" id="formModal">
+    <div class="modal-content">
+      <div class="modal-header" id="formTitle">Add Target</div>
+      <div class="modal-body">
+        <form id="targetForm" onsubmit="handleFormSubmit(event)">
+          <input type="hidden" id="formTargetId" value="">
+          <div class="form-group">
+            <label for="formName">Name *</label>
+            <input type="text" id="formName" required placeholder="e.g., API Backend">
+          </div>
+          <div class="form-group">
+            <label for="formUrl">URL *</label>
+            <input type="url" id="formUrl" required placeholder="https://api.example.com/health">
+          </div>
+          <div class="form-group">
+            <label for="formMethod">HTTP Method</label>
+            <select id="formMethod">
+              <option value="GET">GET</option>
+              <option value="HEAD">HEAD</option>
+              <option value="POST">POST</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label for="formInterval">Interval (ms)</label>
+            <input type="number" id="formInterval" value="30000" min="1000" step="1000">
+          </div>
+          <div class="form-group">
+            <label><input type="checkbox" id="formPaused"> Paused</label>
+          </div>
+        </form>
+      </div>
+      <div class="modal-footer">
+        <button class="btn-close" onclick="closeFormModal()">Cancel</button>
+        <button class="btn" onclick="document.getElementById('targetForm').dispatchEvent(new Event('submit'))">Save</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    let allTargets = [];
+    let lastProbeResults = {};
+
+    async function loadTargets() {
+      try {
+        const res = await fetch('/api/targets');
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        allTargets = await res.json();
+        renderCards();
+      } catch (err) {
+        console.error('[UI] Error loading targets:', err);
+      }
+    }
+
+    function renderCards() {
+      const container = document.getElementById('cardsContainer');
+      const q = document.getElementById('filterInput').value.toLowerCase();
+      const filtered = allTargets.filter(t => !q || t.url.toLowerCase().includes(q) || (t.name || '').toLowerCase().includes(q));
+
+      if (filtered.length === 0) {
+        container.innerHTML = `<div class="empty-state">${allTargets.length === 0 ? 'No targets yet' : 'No matches found'}</div>`;
+        return;
+      }
+
+      container.innerHTML = filtered.map(target => {
+        const lastResult = lastProbeResults[target.id] || {};
+        const signal = lastResult.signal || 'none';
+        const statusClass = `status-${signal}`;
+        return `
+          <div class="card">
+            <div class="card-header">
+              <div class="card-title">${escapeHtml(target.name || 'Unnamed')}</div>
+              <div class="card-status ${statusClass}">${signal === 'UP' ? '✓ Up' : signal === 'WARN' ? '⚠ Warn' : signal === 'DOWN' ? '✗ Down' : '○ Unknown'}</div>
+            </div>
+            <div class="card-url">${escapeHtml(target.url)}</div>
+            <div class="card-info">
+              <div class="info-item"><div class="info-label">Method</div><div class="info-value">${target.method || 'GET'}</div></div>
+              <div class="info-item"><div class="info-label">Interval</div><div class="info-value">${target.intervalMs / 1000}s</div></div>
+            </div>
+            <div class="card-actions">
+              <button class="btn-edit" onclick="openEditModal('${escapeAttr(target.id)}')">✏ Edit</button>
+              <button class="btn-delete" onclick="deleteTarget('${escapeAttr(target.id)}')">🗑 Delete</button>
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    function filterCards() { renderCards(); }
+
+    async function refreshTargets() { loadTargets(); }
+
+    function openAddModal() {
+      document.getElementById('formTargetId').value = '';
+      document.getElementById('formTitle').textContent = 'Add Target';
+      document.getElementById('targetForm').reset();
+      document.getElementById('formModal').classList.add('open');
+    }
+
+    function openEditModal(targetId) {
+      const target = allTargets.find(t => t.id === targetId);
+      if (!target) return;
+      document.getElementById('formTargetId').value = target.id;
+      document.getElementById('formTitle').textContent = 'Edit Target';
+      document.getElementById('formName').value = target.name || '';
+      document.getElementById('formUrl').value = target.url || '';
+      document.getElementById('formMethod').value = target.method || 'GET';
+      document.getElementById('formInterval').value = target.intervalMs || 30000;
+      document.getElementById('formPaused').checked = target.paused || false;
+      document.getElementById('formModal').classList.add('open');
+    }
+
+    function closeFormModal() { document.getElementById('formModal').classList.remove('open'); }
+
+    async function handleFormSubmit(event) {
+      event.preventDefault();
+      const targetId = document.getElementById('formTargetId').value;
+      const payload = {
+        name: document.getElementById('formName').value,
+        url: document.getElementById('formUrl').value,
+        method: document.getElementById('formMethod').value,
+        intervalMs: parseInt(document.getElementById('formInterval').value),
+        paused: document.getElementById('formPaused').checked
+      };
+
+      try {
+        const method = targetId ? 'PUT' : 'POST';
+        const url = targetId ? `/api/targets/${targetId}` : '/api/targets';
+        const res = await fetch(url, { method, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        closeFormModal();
+        await loadTargets();
+      } catch (err) {
+        alert('Error: ' + err.message);
+      }
+    }
+
+    async function deleteTarget(targetId) {
+      if (!confirm('Delete this target?')) return;
+      try {
+        const res = await fetch(`/api/targets/${targetId}`, { method: 'DELETE' });
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        await loadTargets();
+      } catch (err) {
+        alert('Error: ' + err.message);
+      }
+    }
+
+    function escapeHtml(text) {
+      const div = document.createElement('div');
+      div.textContent = text;
+      return div.innerHTML;
+    }
+
+    function escapeAttr(text) {
+      return String(text).replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+      const hostname = window.location.hostname;
+      let env = 'unknown';
+      
+      if (hostname === 'localhost' || hostname === '127.0.0.1') {
+        env = 'dev';
+      } else if (hostname.startsWith('192.168.') || hostname.startsWith('10.')) {
+        env = 'dev';
+      } else if (hostname.includes('test')) {
+        env = 'test';
+      } else {
+        env = 'prod';
+      }
+      
+      let badgeBg = '#eab308';
+      let badgeText = `Environment: DEV (${hostname})`;
+      if (env === 'prod') {
+        badgeBg = '#22c55e';
+        badgeText = `Environment: PROD (${hostname})`;
+      } else if (env === 'test') {
+        badgeBg = '#ef4444';
+        badgeText = `Environment: TEST (${hostname})`;
+      }
+      
+      const badge = document.querySelector('.env-badge');
+      if (badge) badge.style.background = badgeBg;
+      
+      document.getElementById('envLabel').textContent = badgeText;
+      loadTargets();
+      setInterval(loadTargets, 15000);
+    });
+
+    document.addEventListener('keydown', (e) => { if (e.key === 'Escape') closeFormModal(); });
+  </script>
+</body>
+</html>
