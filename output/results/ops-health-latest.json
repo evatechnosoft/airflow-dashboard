@@ -1,22 +1,22 @@
 {
-  "generatedAt": "2026-03-31T20:26:32.9811974+03:00",
+  "generatedAt": "2026-04-01T11:59:44.7251844+03:00",
   "overall": "ok",
   "git": {
     "branch": "test",
-    "dirtyCount": 29
+    "dirtyCount": 1
   },
   "backup": {
     "latestFile": "C:\\projects\\apiflow-monitor-mvp\\output\\shared\\checkpoints\\checkpoint-20260331-182505.zip",
-    "fresh24h": true,
     "root": "C:\\projects\\apiflow-monitor-mvp\\output\\shared\\checkpoints",
-    "ageHours": 1.9
+    "fresh24h": true,
+    "ageHours": 17.46
   },
   "endpoints": [
     {
       "url": "http://127.0.0.1:9201/healthz",
       "ok": true,
       "status": 200,
-      "latencyMs": 87,
+      "latencyMs": 36,
       "error": null
     },
     {
@@ -30,7 +30,7 @@
       "url": "http://192.168.1.186:9309/healthz",
       "ok": true,
       "status": 200,
-      "latencyMs": 17,
+      "latencyMs": 27,
       "error": null
     }
   ]

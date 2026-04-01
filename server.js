@@ -45,6 +45,12 @@ const container = buildContainer({ rootDir: ROOT });
 const ioPaths = buildIoPaths(ROOT);
 
 app.use(express.json());
+
+// Root endpoint dashboard.html'e yönlendir
+app.get('/', (req, res) => {
+  res.sendFile(path.join(ROOT, 'dashboard.html'));
+});
+
 app.use(express.static(ROOT));
 
 app.get('/healthz', (_req, res) => {
